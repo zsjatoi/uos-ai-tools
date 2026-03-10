@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prompt Library — University of Southampton</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #002147;
+    --navy-light: #003366;
+    --gold: #C9A84C;
+    --gold-light: #e8c97a;
+    --cream: #FAF8F4;
+    --white: #ffffff;
+    --text: #1a1a2e;
+    --text-muted: #5a5a7a;
+    --border: #e2ddd4;
+    --chatgpt: #10a37f;
+    --claude: #c96442;
+    --copilot: #0078d4;
+    --gemini: #8E44AD;
+    --shadow: 0 4px 24px rgba(0,33,71,0.10);
+    --shadow-hover: 0 8px 40px rgba(0,33,71,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--navy); color: white; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .header-inner {
+    max-width: 1300px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .header-logo {
+    width: 44px; height: 44px; background: var(--gold); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--navy); flex-shrink: 0;
+  }
+  .header-text h1 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; font-weight: 400; color: white; }
+  .header-text p { font-size: 0.72rem; color: rgba(255,255,255,0.6); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 60%, #005599 100%);
+    color: white; padding: 48px 32px 40px; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero::before { content:''; position:absolute; top:-60px; right:-60px; width:300px; height:300px; background:radial-gradient(circle,rgba(201,168,76,.15) 0%,transparent 70%); border-radius:50%; }
+  .hero::after  { content:''; position:absolute; bottom:-80px; left:-40px; width:400px; height:400px; background:radial-gradient(circle,rgba(201,168,76,.08) 0%,transparent 70%); border-radius:50%; }
+  .hero h2 { font-family:'DM Serif Display',serif; font-size:2.2rem; font-weight:400; margin-bottom:10px; position:relative; z-index:1; }
+  .hero h2 em { color:var(--gold-light); font-style:italic; }
+  .hero p { font-size:.95rem; color:rgba(255,255,255,.75); max-width:560px; margin:0 auto 24px; line-height:1.6; position:relative; z-index:1; font-weight:300; }
+  .hero-stats { display:flex; gap:28px; justify-content:center; position:relative; z-index:1; flex-wrap:wrap; }
+  .stat { text-align:center; }
+  .stat-num { font-family:'DM Serif Display',serif; font-size:1.9rem; color:var(--gold-light); display:block; }
+  .stat-label { font-size:.7rem; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.08em; font-weight:500; }
+
+  .legend { background:white; border-bottom:1px solid var(--border); padding:12px 32px; }
+  .legend-inner { max-width:1300px; margin:0 auto; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .legend-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); font-weight:600; margin-right:4px; }
+  .tool-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:.7rem; font-weight:600; color:white; }
+  .tool-badge.chatgpt { background:var(--chatgpt); }
+  .tool-badge.claude   { background:var(--claude); }
+  .tool-badge.copilot  { background:var(--copilot); }
+  .tool-badge.gemini   { background:var(--gemini); }
+  .tool-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.8); }
+
+  .filters { max-width:1300px; margin:0 auto; padding:28px 32px 12px; }
+  .search-box {
+    width:100%; padding:12px 20px; border:1.5px solid var(--border); border-radius:8px;
+    font-family:'DM Sans',sans-serif; font-size:.9rem; background:white; color:var(--text);
+    transition:border-color .2s; outline:none; margin-bottom:12px;
+  }
+  .search-box:focus { border-color:var(--navy); }
+  .filter-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; align-items:center; }
+  .filter-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); font-weight:600; margin-right:4px; }
+  .filter-btn {
+    padding:7px 16px; border-radius:24px; border:1.5px solid var(--border);
+    background:white; color:var(--text-muted); font-family:'DM Sans',sans-serif;
+    font-size:.8rem; font-weight:500; cursor:pointer; transition:all .2s;
+  }
+  .filter-btn:hover { border-color:var(--navy); color:var(--navy); }
+  .filter-btn.active { background:var(--navy); border-color:var(--navy); color:white; }
+
+  .results-info { max-width:1300px; margin:0 auto; padding:0 32px 12px; font-size:.8rem; color:var(--text-muted); font-weight:300; }
+
+  /* LAYOUT: sidebar nav + main */
+  .content-layout { max-width:1300px; margin:0 auto; padding:0 32px 60px; display:flex; gap:32px; align-items:flex-start; }
+
+  /* SIDEBAR */
+  .sidebar { width:220px; flex-shrink:0; position:sticky; top:80px; }
+  .sidebar-nav { background:white; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .sidebar-heading { padding:12px 16px; background:var(--navy); color:white; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+  .sidebar-item {
+    display:block; padding:10px 16px; font-size:.82rem; color:var(--text-muted);
+    text-decoration:none; border-bottom:1px solid var(--border); cursor:pointer;
+    transition:all .15s; font-weight:400;
+  }
+  .sidebar-item:last-child { border-bottom:none; }
+  .sidebar-item:hover { background:var(--cream); color:var(--navy); }
+  .sidebar-item.active { background:var(--cream); color:var(--navy); font-weight:600; border-left:3px solid var(--gold); }
+  .sidebar-icon { margin-right:6px; }
+
+  /* MAIN */
+  .main { flex:1; min-width:0; }
+
+  /* CATEGORY SECTION */
+  .category-section { margin-bottom:52px; }
+  .category-header {
+    display:flex; align-items:center; gap:14px; margin-bottom:20px;
+    padding-bottom:12px; border-bottom:2px solid var(--navy);
+  }
+  .category-icon { width:38px; height:38px; background:var(--navy); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .category-title { font-family:'DM Serif Display',serif; font-size:1.35rem; color:var(--navy); font-weight:400; }
+  .category-count { margin-left:auto; background:var(--cream); border:1px solid var(--border); border-radius:12px; padding:2px 10px; font-size:.72rem; color:var(--text-muted); font-weight:500; }
+
+  /* SUBCATEGORY */
+  .subcategory-section { margin-bottom:32px; }
+  .subcategory-label {
+    font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; font-weight:700;
+    color:var(--navy); margin-bottom:8px; padding:6px 12px;
+    background:rgba(0,33,71,.05); border-radius:6px; display:inline-block;
+  }
+
+  /* AUDIENCE SUBSECTION */
+  .audience-section { margin-bottom:20px; }
+  .audience-label {
+    font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700;
+    color:var(--gold); margin-bottom:10px; display:flex; align-items:center; gap:8px;
+  }
+  .audience-label::after { content:''; flex:1; height:1px; background:linear-gradient(to right,var(--gold-light),transparent); }
+
+  /* GRID */
+  .prompt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+
+  /* CARD */
+  .prompt-card {
+    background:white; border:1px solid var(--border); border-radius:10px;
+    padding:16px 18px; transition:all .25s; position:relative; overflow:hidden;
+  }
+  .prompt-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--navy); opacity:0; transition:opacity .2s; }
+  .prompt-card:hover { box-shadow:var(--shadow-hover); transform:translateY(-2px); border-color:rgba(0,33,71,.2); }
+  .prompt-card:hover::before { opacity:1; }
+  .prompt-card.hidden { display:none; }
+  .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px; }
+  .prompt-title { font-size:.86rem; font-weight:600; color:var(--text); line-height:1.35; flex:1; }
+  .prompt-text {
+    font-size:.8rem; color:var(--text-muted); line-height:1.6; font-weight:300;
+    margin-bottom:12px; font-style:italic; background:var(--cream);
+    padding:9px 11px; border-radius:6px; border-left:2px solid var(--border);
+  }
+  .prompt-text .placeholder { color:var(--navy); font-weight:600; font-style:normal; }
+  .card-footer { display:flex; justify-content:space-between; align-items:center; }
+  .copy-btn {
+    padding:4px 11px; background:transparent; border:1px solid var(--border);
+    border-radius:6px; font-family:'DM Sans',sans-serif; font-size:.7rem; font-weight:500;
+    color:var(--text-muted); cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:4px;
+  }
+  .copy-btn:hover { background:var(--navy); border-color:var(--navy); color:white; }
+  .copy-btn.copied { background:#10a37f; border-color:#10a37f; color:white; }
+
+  .no-results { text-align:center; padding:60px 20px; color:var(--text-muted); display:none; }
+  .no-results.visible { display:block; }
+  .no-results h3 { font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--text); margin-bottom:8px; font-weight:400; }
+
+  footer { background:var(--navy); color:rgba(255,255,255,.5); text-align:center; padding:22px 32px; font-size:.76rem; font-weight:300; letter-spacing:.03em; }
+  footer strong { color:var(--gold-light); font-weight:500; }
+
+  @media(max-width:768px) {
+    .content-layout { flex-direction:column; padding:0 16px 40px; }
+    .sidebar { width:100%; position:static; }
+    .hero h2 { font-size:1.5rem; }
+    .prompt-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-logo">S</div>
+    <div class="header-text">
+      <h1>AI Prompt Library</h1>
+      <p>University of Southampton &mdash; Digital Innovation &amp; AI</p>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <h2>Prompts that <em>actually work</em></h2>
+  <p>A curated, practical library of AI prompts for academic staff, professional services, and postgraduate researchers at the University of Southampton.</p>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-num" id="total-count">0</span><span class="stat-label">Prompts</span></div>
+    <div class="stat"><span class="stat-num">4</span><span class="stat-label">Categories</span></div>
+    <div class="stat"><span class="stat-num">3</span><span class="stat-label">Audiences</span></div>
+    <div class="stat"><span class="stat-num">4</span><span class="stat-label">AI Tools</span></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-inner">
+    <span class="legend-label">Best used in:</span>
+    <span class="tool-badge chatgpt"><span class="tool-dot"></span>ChatGPT</span>
+    <span class="tool-badge claude"><span class="tool-dot"></span>Claude</span>
+    <span class="tool-badge copilot"><span class="tool-dot"></span>Copilot</span>
+    <span class="tool-badge gemini"><span class="tool-dot"></span>Gemini</span>
+  </div>
+</div>
+
+<div class="filters">
+  <input type="text" class="search-box" id="search" placeholder="Search prompts by keyword, e.g. 'feedback', 'summarise', 'rubric', 'email'..." oninput="filterAll()">
+  <div class="filter-row">
+    <span class="filter-label">Audience:</span>
+    <button class="filter-btn active" onclick="setFilter('audience','all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('audience','academic',this)">Academic Staff</button>
+    <button class="filter-btn" onclick="setFilter('audience','professional',this)">Professional Services</button>
+    <button class="filter-btn" onclick="setFilter('audience','pgr',this)">Postgraduate Researchers</button>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">Category:</span>
+    <button class="filter-btn active" onclick="setFilter('category','all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('category','writing',this)">Writing &amp; Editing</button>
+    <button class="filter-btn" onclick="setFilter('category','research',this)">Research &amp; Summarising</button>
+    <button class="filter-btn" onclick="setFilter('category','email',this)">Email &amp; Communication</button>
+    <button class="filter-btn" onclick="setFilter('category','data',this)">Data &amp; Reporting</button>
+  </div>
+</div>
+
+<div class="results-info" id="results-info"></div>
+
+<div class="content-layout">
+  <nav class="sidebar">
+    <div class="sidebar-nav" id="sidebar-nav">
+      <div class="sidebar-heading">Categories</div>
+    </div>
+  </nav>
+  <main class="main" id="main-content"></main>
+</div>
+
+<div class="no-results" id="no-results">
+  <h3>No prompts found</h3>
+  <p>Try adjusting your filters or search terms.</p>
+</div>
+
+<footer>
+  Developed by <strong>Dr Zubair Shafiq</strong> &mdash; Learning Designer, Digital Learning, iSolutions &mdash; University of Southampton &mdash; 2026
+</footer>
+
+<script>
+const prompts = [
+
+  // ══════════════════════════════════════════════
+  // WRITING & EDITING
+  // ══════════════════════════════════════════════
+
+  // ── Academic Tone & Clarity ──
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'academic', tool:'claude',
+    title:'Improve academic clarity',
+    text:'Review the following section of my [lecture notes / module guide / assessment brief] and suggest improvements for clarity and readability. Keep the academic tone but remove unnecessarily complex phrasing. Return the revised version with a brief explanation of each change: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'academic', tool:'claude',
+    title:'Inclusive language review',
+    text:'Review the following text for inclusive and accessible language. Flag any terms that may exclude or marginalise particular groups and suggest alternatives. Also check for plain language and readability. Text: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'academic', tool:'copilot',
+    title:'Rewrite for a different audience',
+    text:'I have written the following text for [academic experts]. Please rewrite it for [undergraduate students / general public / professional services staff] without losing the key meaning. Aim for clear, direct sentences. Original text: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'academic', tool:'claude',
+    title:'Reduce passive voice',
+    text:'Rewrite the following passage using active voice where possible, without changing the meaning or academic register. Highlight each change you made. Text: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'academic', tool:'claude',
+    title:'Proofread academic writing',
+    text:'Proofread the following academic text. Correct grammatical errors, remove redundancy, and ensure consistent terminology throughout. Do not change my argument or restructure paragraphs. Return the corrected version with a summary of changes. Text: [PASTE TEXT]' },
+
+  // ── Assessment & Learning Design ──
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'claude',
+    title:'Write learning outcomes',
+    text:'Write five measurable learning outcomes for a [undergraduate / postgraduate] module on [TOPIC]. Use Bloom\'s Taxonomy action verbs and ensure outcomes cover a range of cognitive levels from understanding through to evaluation.' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'chatgpt',
+    title:'Draft assessment brief',
+    text:'Draft a student-facing assessment brief for a [essay / report / presentation / group project] on the topic of [TOPIC]. The word count is [WORD COUNT] and the submission deadline is [DATE]. Include the task description, marking criteria headings, and submission instructions. The module is at [LEVEL] level.' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'chatgpt',
+    title:'Generate rubric descriptors',
+    text:'Create a marking rubric for the following assessment: [DESCRIBE ASSESSMENT]. Include five performance levels (Distinction, Merit, Pass, Marginal Fail, Fail) and four criteria: [LIST CRITERIA]. Write specific descriptors for each cell.' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'claude',
+    title:'Write formative feedback',
+    text:'Write constructive formative feedback on the following student submission. Acknowledge two strengths, identify two areas for development, and suggest specific actions the student can take before their next submission. Tone should be encouraging and specific. Submission: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'chatgpt',
+    title:'Design a case study activity',
+    text:'Design a case study activity for [undergraduate / postgraduate] students studying [TOPIC]. The case study should present a realistic scenario, include three to five discussion questions at different levels of Bloom\'s Taxonomy, and end with a reflective task. Learning outcome: [OUTCOME].' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'claude',
+    title:'Summarise reading for students',
+    text:'Summarise the following academic text in approximately 200 words for [undergraduate / postgraduate] students. Focus on the main argument, key evidence, and implications. Avoid jargon where possible. Text: [PASTE TEXT]' },
+
+  // ── Professional Documents ──
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'copilot',
+    title:'Draft a policy document',
+    text:'Draft a short policy document (approximately 400 words) on [TOPIC] for [AUDIENCE]. Include: purpose, scope, key principles, responsibilities, and review date. Use clear headings and plain English throughout.' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'copilot',
+    title:'Plain English rewrite',
+    text:'Rewrite the following text in plain English suitable for a general university audience. Aim for short sentences, active voice, and no jargon. If any technical terms must be kept, add a brief explanation in brackets. Text: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'claude',
+    title:'Write guidance notes',
+    text:'Write clear step-by-step guidance notes for [TASK]. The audience is [DESCRIBE AUDIENCE]. Use numbered steps, plain language, and include a note about who to contact if something goes wrong.' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'chatgpt',
+    title:'Draft a business case',
+    text:'Draft a short business case (approximately 500 words) for [DESCRIBE PROPOSAL]. Include: the problem or opportunity, proposed solution, expected benefits, estimated costs or resource requirements, and risks. The audience is [SENIOR LEADERSHIP / COMMITTEE NAME].' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'copilot',
+    title:'Write a project update',
+    text:'Write a concise project update (approximately 250 words) for [PROJECT NAME]. Cover: progress since last update, any risks or blockers, next steps, and key decisions needed. Tone should be professional and factual.' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'claude',
+    title:'Proofread and tighten',
+    text:'Proofread the following text. Correct any grammatical errors, remove redundant phrases, and tighten the writing without changing the meaning or tone. Return the revised version and list the changes you made. Text: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'copilot',
+    title:'Write a staff announcement',
+    text:'Draft an all-staff announcement about [TOPIC]. Keep it concise (under 200 words), use a clear subject line, and end with a call to action or contact details for further information.' },
+
+  // ── Thesis & Academic Writing ──
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'claude',
+    title:'Improve thesis paragraph',
+    text:'Review the following paragraph from my thesis and suggest improvements to clarity, argument structure, and academic tone. Do not change my core argument. Highlight any areas where the reasoning could be stronger or where evidence is needed. Paragraph: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'claude',
+    title:'Draft abstract',
+    text:'Help me draft an abstract of approximately 300 words for my thesis. My research topic is [TOPIC]. My main research question is [QUESTION]. My methodology was [METHOD]. My key findings are [FINDINGS]. My contribution to the field is [CONTRIBUTION].' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'chatgpt',
+    title:'Write chapter introduction',
+    text:'Help me write an introduction for Chapter [NUMBER] of my thesis. This chapter covers [TOPIC]. The previous chapter established [WHAT CAME BEFORE]. This chapter should [PURPOSE]. The introduction should be approximately [WORD COUNT] words and signpost the structure clearly.' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'claude',
+    title:'Strengthen argument',
+    text:'Read the following section of my thesis and identify any weaknesses in the argument. Suggest how I could strengthen the reasoning, address counterarguments, or improve the use of evidence. Section: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'chatgpt',
+    title:'Write literature review paragraph',
+    text:'Help me write a literature review paragraph on the theme of [THEME]. I want to discuss the following sources: [LIST AUTHORS AND KEY POINTS]. The paragraph should synthesise the sources rather than summarise them individually, and end with a gap in the literature that my research addresses.' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'claude',
+    title:'Viva preparation: anticipate questions',
+    text:'Based on the following thesis abstract and chapter summaries, generate ten challenging questions an examiner might ask during a viva. For each question, suggest what a strong answer might cover. Abstract: [PASTE ABSTRACT]. Chapter summaries: [PASTE SUMMARIES]' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'copilot',
+    title:'Format reference list',
+    text:'Check the following reference list for consistency and accuracy against [APA 7th / Harvard / Chicago] referencing style. Flag any missing elements, formatting errors, or inconsistencies. Reference list: [PASTE REFERENCES]' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'chatgpt',
+    title:'Write a plain English summary',
+    text:'Rewrite the following section of my thesis as a plain English summary suitable for a general audience or a research impact statement. Keep the key findings but remove technical jargon. Target: 150 words. Section: [PASTE TEXT]' },
+
+  // ══════════════════════════════════════════════
+  // RESEARCH & SUMMARISING
+  // ══════════════════════════════════════════════
+
+  // ── Literature & Sources ──
+  { category:'research', subcategory:'Literature & Sources', audience:'academic', tool:'claude',
+    title:'Summarise a research paper',
+    text:'Summarise the following research paper in 250 words. Focus on: the research question, methodology, key findings, limitations, and implications for practice or further research. Paper: [PASTE TEXT OR ABSTRACT]' },
+  { category:'research', subcategory:'Literature & Sources', audience:'academic', tool:'chatgpt',
+    title:'Identify research gaps',
+    text:'Based on the following summaries of recent literature on [TOPIC], identify the key themes, areas of agreement, and gaps in the research. Suggest three potential research questions that could address these gaps. Literature summaries: [PASTE TEXT]' },
+  { category:'research', subcategory:'Literature & Sources', audience:'academic', tool:'claude',
+    title:'Compare methodologies',
+    text:'Compare the methodological approaches used in the following three studies on [TOPIC]. For each study, identify the research design, data collection method, sample, and key strength or limitation. Then suggest which approach would be most appropriate for [YOUR CONTEXT]. Studies: [PASTE SUMMARIES]' },
+  { category:'research', subcategory:'Literature & Sources', audience:'academic', tool:'gemini',
+    title:'Current developments overview',
+    text:'Provide an overview of the most significant developments in the field of [TOPIC] over the past three years. Focus on emerging methodologies, influential publications, and any shifts in theoretical frameworks. Note any areas of active debate.' },
+  { category:'research', subcategory:'Literature & Sources', audience:'pgr', tool:'chatgpt',
+    title:'Map your literature',
+    text:'I am conducting a literature review on [TOPIC]. Based on the following list of sources and their key arguments, help me identify the main schools of thought, areas of agreement and disagreement, and where my own research might sit. Sources: [PASTE LIST]' },
+  { category:'research', subcategory:'Literature & Sources', audience:'pgr', tool:'gemini',
+    title:'Find counterarguments',
+    text:'My thesis argues that [YOUR MAIN ARGUMENT]. Generate the five strongest counterarguments a critical examiner or reviewer might raise against this position. For each counterargument, suggest how I might respond to it in my thesis.' },
+  { category:'research', subcategory:'Literature & Sources', audience:'pgr', tool:'claude',
+    title:'Analyse qualitative data themes',
+    text:'I have collected the following qualitative data from [interviews / focus groups / documents] about [TOPIC]. Identify the main emerging themes and for each theme provide: a label, a description, and two or three supporting quotes. Data: [PASTE EXCERPTS]' },
+  { category:'research', subcategory:'Literature & Sources', audience:'pgr', tool:'claude',
+    title:'Explain a complex concept',
+    text:'Explain the concept of [CONCEPT] as used in [YOUR FIELD]. Start with a plain English explanation, then give the technical definition used in academic literature, and provide one concrete example of how it is applied in research.' },
+
+  // ── Evaluation & Feedback ──
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'academic', tool:'chatgpt',
+    title:'Synthesise student feedback',
+    text:'I have collected the following student feedback responses about [MODULE / ASSESSMENT]. Identify the main themes, any patterns, and the top three areas for improvement. Present as a short summary followed by recommended actions. Feedback: [PASTE RESPONSES]' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'academic', tool:'claude',
+    title:'Ethics review checklist',
+    text:'Review the following research proposal for potential ethical issues. Consider: informed consent, data protection, risk to participants, researcher positionality, and power imbalances. Suggest how each issue could be addressed. Proposal: [PASTE TEXT]' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'academic', tool:'gemini',
+    title:'Explore interdisciplinary connections',
+    text:'I am researching [TOPIC] from the perspective of [YOUR DISCIPLINE]. Suggest five ways this topic connects to other disciplines and identify any theories or frameworks from those fields that might enrich my research.' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'copilot',
+    title:'Summarise a long document',
+    text:'Summarise the following document in no more than 300 words. Focus on key decisions, recommendations, and any actions required. Identify anything that requires a response by a deadline. Document: [PASTE TEXT]' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'chatgpt',
+    title:'Benchmark against other institutions',
+    text:'Provide a summary of how UK universities are currently approaching [TOPIC, e.g. AI policy / hybrid working / sustainability reporting]. Identify common themes, any innovative approaches, and what the University of Southampton might consider.' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'copilot',
+    title:'Analyse survey results',
+    text:'I have the following survey results from [NUMBER] respondents about [TOPIC]. Summarise the key findings, identify any notable patterns or outliers, and suggest three recommendations based on the data. Results: [PASTE DATA OR SUMMARY]' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'claude',
+    title:'Identify risks in a proposal',
+    text:'Review the following proposal for [PROJECT OR INITIATIVE] and identify the top five risks. For each risk, suggest a mitigation strategy. Present as a table with columns: Risk, Likelihood, Impact, Mitigation. Proposal: [PASTE TEXT]' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'gemini',
+    title:'Research a tool or technology',
+    text:'Provide a concise overview of [TOOL OR TECHNOLOGY NAME] for a higher education context. Cover: what it does, key features, known limitations, data protection considerations, typical use cases in UK universities, and approximate cost model.' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'pgr', tool:'chatgpt',
+    title:'Generate interview questions',
+    text:'I am conducting semi-structured interviews with [DESCRIBE PARTICIPANTS] about [TOPIC]. My research question is [QUESTION]. Generate ten open-ended interview questions that would generate rich qualitative data. Include at least two probing follow-up questions for the most important themes.' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'pgr', tool:'claude',
+    title:'Simplify technical writing',
+    text:'Rewrite the following section of my thesis for a non-specialist audience, for example for a plain English summary or public engagement piece. Keep the key findings but remove technical jargon and explain specialist terms. Section: [PASTE TEXT]' },
+
+  // ── AI-Assisted Research ──
+  { category:'research', subcategory:'AI-Assisted Research', audience:'academic', tool:'chatgpt',
+    title:'Generate research questions',
+    text:'I am designing a new research project on [TOPIC]. Generate ten potential research questions ranging from descriptive to evaluative. For each, note the most appropriate methodology. My disciplinary context is [DISCIPLINE].' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'academic', tool:'claude',
+    title:'Critique a theoretical framework',
+    text:'Critically evaluate the use of [THEORETICAL FRAMEWORK] in the following research context. Identify its strengths, limitations, and any alternative frameworks that might offer a stronger or complementary analytical lens. Context: [DESCRIBE YOUR RESEARCH].' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'professional', tool:'copilot',
+    title:'Extract actions from meeting notes',
+    text:'Read the following meeting notes and extract all agreed actions. For each action identify: what needs to be done, who is responsible, and the deadline if stated. Present as a numbered list. Notes: [PASTE TEXT]' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'pgr', tool:'claude',
+    title:'Reflexivity statement',
+    text:'Help me write a reflexivity statement for my thesis. My research is on [TOPIC] and my approach is [QUALITATIVE / INTERPRETIVIST / OTHER]. I want to acknowledge how my background as [BRIEF DESCRIPTION] may have influenced my research design, data collection, and interpretation. Target length: [WORD COUNT].' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'pgr', tool:'chatgpt',
+    title:'Prepare conference presentation',
+    text:'Help me structure a [10 / 15 / 20] minute conference presentation on my PhD research for [DESCRIBE AUDIENCE]. My research topic is [TOPIC], key findings are [FINDINGS], and my contribution to the field is [CONTRIBUTION]. Suggest a structure with approximate timings for each section.' },
+
+  // ══════════════════════════════════════════════
+  // EMAIL & COMMUNICATION
+  // ══════════════════════════════════════════════
+
+  // ── Student Communication ──
+  { category:'email', subcategory:'Student Communication', audience:'academic', tool:'copilot',
+    title:'Reply to a student complaint',
+    text:'Draft a professional and empathetic reply to the following student complaint. Acknowledge their concern, explain the relevant process, and outline the next steps. Keep the tone supportive but factual. Do not admit liability. Complaint: [PASTE TEXT]' },
+  { category:'email', subcategory:'Student Communication', audience:'academic', tool:'copilot',
+    title:'Chase a late submission',
+    text:'Draft a short, professional email to a student who has missed the submission deadline for [ASSESSMENT NAME]. The deadline was [DATE]. Remind them of the late submission policy, explain what they need to do next, and include signposting to support services.' },
+  { category:'email', subcategory:'Student Communication', audience:'academic', tool:'claude',
+    title:'Announce a curriculum change',
+    text:'Draft an email to students announcing the following change to [MODULE NAME]: [DESCRIBE CHANGE]. Explain the reason for the change, what it means for students, and what action if any they need to take. The tone should be clear and reassuring.' },
+  { category:'email', subcategory:'Student Communication', audience:'academic', tool:'chatgpt',
+    title:'Promote a module or event',
+    text:'Write a short, engaging email to students promoting [MODULE / EVENT / OPPORTUNITY]. Highlight the key benefits, who it is suitable for, and the key details (date, location, how to sign up). Keep it under 200 words.' },
+  { category:'email', subcategory:'Student Communication', audience:'academic', tool:'copilot',
+    title:'Write a reference letter',
+    text:'Help me draft a reference letter for [STUDENT/COLLEAGUE NAME] who is applying for [POSITION/PROGRAMME]. Their key strengths are [LIST STRENGTHS]. A specific example I can use is [EXAMPLE]. The letter should be approximately [WORD COUNT] words.' },
+  { category:'email', subcategory:'Student Communication', audience:'pgr', tool:'copilot',
+    title:'Email your supervisor',
+    text:'Help me draft an email to my supervisor requesting [a meeting / feedback on a chapter / an extension / support with a specific issue]. The context is [DESCRIBE SITUATION]. Key points I want to include: [LIST POINTS].' },
+  { category:'email', subcategory:'Student Communication', audience:'pgr', tool:'copilot',
+    title:'Request an extension',
+    text:'Draft a professional email requesting a deadline extension for [ASSIGNMENT / CHAPTER / MILESTONE]. The original deadline is [DATE]. The reason for my request is [REASON]. I am proposing a new deadline of [DATE]. Keep the tone respectful.' },
+  { category:'email', subcategory:'Student Communication', audience:'pgr', tool:'chatgpt',
+    title:'Reach out to a researcher',
+    text:'Draft a brief, professional email to [RESEARCHER NAME] at [INSTITUTION] introducing myself and explaining why I would like to connect. I am a PhD researcher at the University of Southampton working on [TOPIC]. Keep the email under 150 words.' },
+  { category:'email', subcategory:'Student Communication', audience:'pgr', tool:'copilot',
+    title:'Thank a research participant',
+    text:'Draft a brief thank-you email to a research participant who took part in [interview / focus group / survey] for my PhD research on [TOPIC]. Acknowledge their time, confirm how their data will be used and stored, and let them know when findings will be available.' },
+
+  // ── Colleague & Stakeholder Communication ──
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'academic', tool:'claude',
+    title:'Respond to a colleague sensitively',
+    text:'Help me draft a professional response to the following email from a colleague. The situation is sensitive because [DESCRIBE CONTEXT]. My response should [DESCRIBE WHAT YOU WANT TO ACHIEVE] while maintaining a positive working relationship. Their email: [PASTE EMAIL]' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'academic', tool:'copilot',
+    title:'Request external examiner feedback',
+    text:'Draft a professional email to an external examiner requesting their feedback on [MODULE / ASSESSMENT]. Include a brief description of what you are asking them to review, the deadline, and the preferred format for their response.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'copilot',
+    title:'Escalate an issue professionally',
+    text:'Draft a professional email escalating the following issue to [MANAGER / SENIOR COLLEAGUE / EXTERNAL PARTNER]: [DESCRIBE ISSUE]. Include: a clear description of the problem, what has already been tried, why escalation is needed now, and what outcome you are seeking.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'copilot',
+    title:'Decline a request politely',
+    text:'Draft a professional email declining the following request: [DESCRIBE REQUEST]. The reason for declining is [REASON]. Suggest an alternative where possible and keep the tone courteous and constructive.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'claude',
+    title:'Communicate a service change',
+    text:'Draft a communication to [STAFF / STUDENTS / EXTERNAL PARTNERS] about the following change to [SERVICE / SYSTEM / PROCESS]: [DESCRIBE CHANGE]. Include: what is changing, when it takes effect, why it is happening, and what people need to do.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'copilot',
+    title:'Follow up after a meeting',
+    text:'Draft a follow-up email after a meeting with [NAME / GROUP] on [DATE]. The meeting covered [KEY TOPICS]. The agreed actions are [LIST ACTIONS WITH OWNERS]. The next meeting is [DATE IF KNOWN]. Keep the email concise and professional.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'chatgpt',
+    title:'Introduce yourself to a new team',
+    text:'Draft a friendly, professional introduction email to send to my new team at [TEAM/DEPARTMENT NAME]. I am joining as [JOB TITLE]. Include a brief background, two or three things I am looking forward to in the role, and an offer to connect.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'copilot',
+    title:'Request information from a supplier',
+    text:'Draft a professional email to [SUPPLIER / VENDOR NAME] requesting [INFORMATION / DOCUMENTATION / DEMONSTRATION]. Include: the context for the request, the specific information needed, the deadline, and the preferred format for their response.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'pgr', tool:'claude',
+    title:'Respond to reviewer comments',
+    text:'Help me draft a professional response to the following reviewer comments on my paper or thesis chapter. For each comment, acknowledge the point raised and explain either the change I have made or my reason for not making a change. Reviewer comments: [PASTE COMMENTS]' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'pgr', tool:'claude',
+    title:'Raise a concern with your department',
+    text:'Help me draft a professional email raising the following concern with [SUPERVISOR / DEPARTMENT / GRADUATE SCHOOL]: [DESCRIBE CONCERN]. I want to explain the situation clearly, suggest a resolution, and maintain a constructive tone. Key facts: [LIST FACTS].' },
+
+  // ── Difficult Conversations ──
+  { category:'email', subcategory:'Difficult Conversations', audience:'academic', tool:'claude',
+    title:'Address a plagiarism concern',
+    text:'Draft a professional email to a student raising a concern about potential academic integrity issues in their recent submission. Do not make a formal allegation. Invite the student to a meeting to discuss the work. The tone should be factual, non-accusatory, and procedurally correct.' },
+  { category:'email', subcategory:'Difficult Conversations', audience:'academic', tool:'claude',
+    title:'Manage an upset student',
+    text:'Draft a reply to the following email from a student who is upset about their grade. Acknowledge their feelings, explain the marking process, clarify the next steps available to them (e.g. feedback meeting or formal appeal), and keep the tone empathetic but professional. Their email: [PASTE EMAIL]' },
+  { category:'email', subcategory:'Difficult Conversations', audience:'professional', tool:'claude',
+    title:'Address underperformance sensitively',
+    text:'Help me draft a professional email to a team member to address the following performance concern: [DESCRIBE CONCERN]. The tone should be supportive and solution-focused, not disciplinary. I want to open a conversation and agree a way forward. Key points: [LIST POINTS].' },
+  { category:'email', subcategory:'Difficult Conversations', audience:'professional', tool:'claude',
+    title:'Push back on a decision',
+    text:'Help me draft a professional email expressing concern about the following decision made by [MANAGER / COMMITTEE / SENIOR COLLEAGUE]: [DESCRIBE DECISION]. I want to raise my concern respectfully, provide evidence for my view, and suggest an alternative without damaging the relationship.' },
+  { category:'email', subcategory:'Difficult Conversations', audience:'pgr', tool:'claude',
+    title:'Raise a supervisory concern',
+    text:'Help me draft a careful email to [SUPERVISOR / GRADUATE SCHOOL] raising a concern about my supervision. The issue is [DESCRIBE ISSUE]. I want to be professional, factual, and solution-focused. I want to preserve the relationship where possible. Key facts: [LIST FACTS].' },
+
+  // ══════════════════════════════════════════════
+  // DATA & REPORTING
+  // ══════════════════════════════════════════════
+
+  // ── Performance & Analytics ──
+  { category:'data', subcategory:'Performance & Analytics', audience:'academic', tool:'copilot',
+    title:'Interpret student performance data',
+    text:'I have the following student performance data for [MODULE NAME]: [PASTE DATA OR SUMMARY]. Identify the key patterns, flag any concerning trends, and suggest two or three actions I could take to improve outcomes in the next academic year.' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'academic', tool:'claude',
+    title:'Write a module evaluation report',
+    text:'Help me write a module evaluation report for [MODULE NAME] based on the following data: student satisfaction scores [DATA], grade distribution [DATA], key themes from feedback [THEMES]. The report should be approximately 400 words and include recommendations for next year.' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'academic', tool:'chatgpt',
+    title:'Summarise NSS results',
+    text:'Summarise the following National Student Survey results for [DEPARTMENT / FACULTY]. Highlight the highest and lowest scoring areas, any significant changes from last year, and suggest three priority actions. Results: [PASTE DATA].' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'academic', tool:'claude',
+    title:'Analyse attendance patterns',
+    text:'I have the following attendance data for [MODULE / COHORT]: [PASTE DATA]. Identify any concerning patterns, suggest possible explanations, and recommend actions I could take to improve attendance. Consider any equity implications in your response.' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'professional', tool:'copilot',
+    title:'Interpret a dashboard',
+    text:'I am looking at the following data from our [SYSTEM / DASHBOARD]: [PASTE DATA OR DESCRIBE METRICS]. Explain what this data tells us in plain English, identify the most significant findings, and suggest what actions we should consider.' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'professional', tool:'copilot',
+    title:'Produce a project status report',
+    text:'Draft a project status report for [PROJECT NAME] covering the period [DATE RANGE]. Include: RAG status, key achievements, risks and issues, budget position if relevant, and next steps. Keep it to one page.' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'pgr', tool:'chatgpt',
+    title:'Present quantitative results',
+    text:'Help me write a clear description of the following quantitative results for my thesis. The statistical test used was [TEST]. The results were [RESULTS]. Explain what these results mean and how they relate to my hypothesis: [HYPOTHESIS].' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'pgr', tool:'chatgpt',
+    title:'Write a findings section',
+    text:'Help me write a findings section for my thesis chapter on [TOPIC]. My key findings are [LIST FINDINGS]. The data was collected through [METHOD]. I need to present the findings clearly and connect them to my research questions: [LIST QUESTIONS]. Target length: [WORD COUNT].' },
+
+  // ── Writing with Data ──
+  { category:'data', subcategory:'Writing with Data', audience:'academic', tool:'copilot',
+    title:'Write a research impact statement',
+    text:'Help me write a research impact statement for [RESEARCH PROJECT]. The research found [KEY FINDINGS]. The beneficiaries are [DESCRIBE BENEFICIARIES]. Evidence of impact includes [EVIDENCE]. The statement should be approximately 200 words and suitable for [REF submission / grant application / annual review].' },
+  { category:'data', subcategory:'Writing with Data', audience:'academic', tool:'chatgpt',
+    title:'Draft KPIs for a new initiative',
+    text:'Help me draft five measurable KPIs for the following new initiative: [DESCRIBE INITIATIVE]. For each KPI suggest: the metric, how it would be measured, the data source, the target, and the review frequency.' },
+  { category:'data', subcategory:'Writing with Data', audience:'professional', tool:'copilot',
+    title:'Write an executive summary',
+    text:'Write an executive summary of the following report for a senior leadership audience. No more than 300 words. Cover: the purpose of the report, key findings, recommendations, and any decisions required. Report: [PASTE TEXT].' },
+  { category:'data', subcategory:'Writing with Data', audience:'professional', tool:'claude',
+    title:'Build a reporting narrative',
+    text:'Help me write a narrative to accompany the following data for [AUDIENCE]. The data shows [DESCRIBE KEY FIGURES]. The narrative should explain what the numbers mean, why they matter, and what we plan to do next. Word limit: [WORD LIMIT].' },
+  { category:'data', subcategory:'Writing with Data', audience:'professional', tool:'claude',
+    title:'Write evaluation findings',
+    text:'Help me write a section on evaluation findings for [PROJECT / SERVICE / INITIATIVE]. The evaluation collected data through [METHODS]. Key findings include [FINDINGS]. Connect the findings to the original aims of the project. Target: [WORD COUNT] words.' },
+  { category:'data', subcategory:'Writing with Data', audience:'pgr', tool:'claude',
+    title:'Describe your methodology',
+    text:'Help me write a clear and accurate description of my research methodology for my thesis. My approach is [DESCRIBE APPROACH]. My data collection methods are [METHODS]. My analysis approach is [APPROACH]. Target length: [WORD COUNT] words.' },
+  { category:'data', subcategory:'Writing with Data', audience:'pgr', tool:'claude',
+    title:'Discuss limitations',
+    text:'Help me write a limitations section for my thesis. My research involved [BRIEF DESCRIPTION]. The main limitations I have identified are [LIST LIMITATIONS]. For each, suggest how I should discuss it in a way that is honest but does not undermine the overall contribution of my research.' },
+
+  // ── Planning & Design ──
+  { category:'data', subcategory:'Planning & Design', audience:'professional', tool:'chatgpt',
+    title:'Design a survey',
+    text:'Help me design a short staff or student survey about [TOPIC]. I need approximately [NUMBER] questions. The survey should take no more than [TIME] minutes to complete. Include rating scale questions, multiple choice, and at least one open text question. Audience: [DESCRIBE AUDIENCE].' },
+  { category:'data', subcategory:'Planning & Design', audience:'professional', tool:'claude',
+    title:'Plan a change management process',
+    text:'Help me plan a change management process for the following change: [DESCRIBE CHANGE]. The affected groups are [LIST GROUPS]. Using ADKAR principles, outline the key activities needed at each stage: Awareness, Desire, Knowledge, Ability, Reinforcement. Include suggested timelines.' },
+  { category:'data', subcategory:'Planning & Design', audience:'professional', tool:'copilot',
+    title:'Create a RACI matrix',
+    text:'Help me create a RACI matrix for the following project: [DESCRIBE PROJECT]. The key tasks are [LIST TASKS] and the roles involved are [LIST ROLES]. Present as a table with tasks as rows and roles as columns, with R, A, C or I in each cell.' },
+  { category:'data', subcategory:'Planning & Design', audience:'professional', tool:'chatgpt',
+    title:'Design a training programme outline',
+    text:'Help me design an outline for a training programme on [TOPIC] for [AUDIENCE]. The programme should take approximately [DURATION]. Include: learning outcomes, session titles and timings, suggested delivery methods, and how learning will be assessed or evaluated.' },
+  { category:'data', subcategory:'Planning & Design', audience:'pgr', tool:'copilot',
+    title:'Write a data management plan',
+    text:'Help me draft a data management plan for my PhD research project on [TOPIC]. My data types include [LIST DATA TYPES]. Address: how data will be stored and backed up, who will have access, how long it will be retained, and how it will be disposed of or archived at the end of the project.' },
+  { category:'data', subcategory:'Planning & Design', audience:'pgr', tool:'chatgpt',
+    title:'Create a PhD timeline',
+    text:'Help me create a realistic timeline for completing my PhD. I am currently at [STAGE, e.g. end of year 1]. My submission deadline is [DATE]. My remaining tasks are [LIST TASKS, e.g. data collection, analysis, writing chapters, viva preparation]. Present as a month-by-month plan.' },
+
+  // ── Additional Writing prompts ──
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'academic', tool:'chatgpt',
+    title:'Simplify a complex sentence',
+    text:'Rewrite the following sentence so it is easier to read without losing its meaning. The audience is [undergraduate students / professional services staff]. Sentence: [PASTE SENTENCE]' },
+  { category:'writing', subcategory:'Academic Tone & Clarity', audience:'pgr', tool:'claude',
+    title:'Check argument coherence',
+    text:'Read the following section of my thesis and tell me whether the argument flows logically. Identify any logical gaps, unsupported claims, or places where the reasoning jumps. Section: [PASTE TEXT]' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'claude',
+    title:'Write a module rationale',
+    text:'Write a module rationale of approximately 150 words for a [undergraduate / postgraduate] module on [TOPIC]. Explain the purpose of the module, its relevance to the programme, and how it connects to graduate attributes or professional practice.' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'chatgpt',
+    title:'Design a group work activity',
+    text:'Design a structured group work activity for [undergraduate / postgraduate] students on the topic of [TOPIC]. The group size is [NUMBER]. The activity should take approximately [DURATION]. Include clear roles, a task description, and a deliverable.' },
+  { category:'writing', subcategory:'Assessment & Learning Design', audience:'academic', tool:'gemini',
+    title:'Generate discussion prompts',
+    text:'Generate ten discussion prompts for a seminar on [TOPIC] at [undergraduate / postgraduate] level. The prompts should encourage critical thinking and draw on students own experience where possible. Learning outcome: [OUTCOME].' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'copilot',
+    title:'Write a terms of reference',
+    text:'Draft a terms of reference document for [COMMITTEE / WORKING GROUP NAME]. Include: purpose, scope, membership, chair responsibilities, meeting frequency, quorum, and decision-making process. Keep it concise and suitable for formal governance use.' },
+  { category:'writing', subcategory:'Professional Documents', audience:'professional', tool:'claude',
+    title:'Summarise a meeting for minutes',
+    text:'Draft formal minutes for the following meeting. Include: date, attendees, agenda items, key points discussed, decisions made, and actions with owners and deadlines. Notes: [PASTE NOTES]' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'chatgpt',
+    title:'Write a research proposal summary',
+    text:'Help me write a 300-word summary of my research proposal for [FUNDING BODY / COMMITTEE]. My research question is [QUESTION]. My methodology is [METHOD]. My expected contribution is [CONTRIBUTION]. The audience may not be specialists in my field.' },
+  { category:'writing', subcategory:'Thesis & Academic Writing', audience:'pgr', tool:'claude',
+    title:'Identify structural weaknesses',
+    text:'Review the following chapter outline and identify any structural weaknesses. Consider: logical flow, balance between sections, whether the structure supports my argument, and anything missing. Outline: [PASTE OUTLINE]' },
+
+  // ── Additional Research prompts ──
+  { category:'research', subcategory:'Literature & Sources', audience:'academic', tool:'gemini',
+    title:'Track emerging trends',
+    text:'What are the most significant emerging trends in [FIELD OR TOPIC] that a researcher or educator should be aware of? Focus on developments from the past two years and note any implications for curriculum design or research practice.' },
+  { category:'research', subcategory:'Literature & Sources', audience:'academic', tool:'claude',
+    title:'Write a critical annotation',
+    text:'Write a critical annotation of approximately 150 words for the following source. Include: a summary of the main argument, methodology, key strengths and limitations, and relevance to research on [TOPIC]. Source: [PASTE REFERENCE AND ABSTRACT].' },
+  { category:'research', subcategory:'Literature & Sources', audience:'pgr', tool:'claude',
+    title:'Synthesise conflicting evidence',
+    text:'The following sources present conflicting evidence on [TOPIC]. Help me write a paragraph that acknowledges this conflict, explains possible reasons for it, and positions my own research in relation to it. Sources: [PASTE SUMMARIES]' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'chatgpt',
+    title:'Write evaluation questions',
+    text:'Help me design an evaluation framework for [PROJECT / SERVICE / PROGRAMME]. Write ten evaluation questions across three levels: immediate reaction, learning or change, and longer-term impact. Suggest a data collection method for each.' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'professional', tool:'claude',
+    title:'Assess stakeholder impact',
+    text:'For the following initiative: [DESCRIBE], identify all key stakeholder groups, assess how each is likely to be affected, and suggest how each should be engaged or communicated with.' },
+  { category:'research', subcategory:'Evaluation & Feedback', audience:'pgr', tool:'claude',
+    title:'Prepare for a supervision meeting',
+    text:'Help me prepare for an upcoming supervision meeting. My current stage is [STAGE]. Since the last meeting I have [DESCRIBE PROGRESS]. I want to discuss [KEY TOPICS]. Help me frame my update clearly and draft two or three questions for my supervisor.' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'academic', tool:'claude',
+    title:'Evaluate AI output critically',
+    text:'I used an AI tool to generate the following response: [PASTE OUTPUT]. Evaluate the quality of this response. Identify any factual errors, gaps, or bias, and suggest how I should verify or improve it before using it.' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'professional', tool:'gemini',
+    title:'Map a process',
+    text:'Help me map the current process for [PROCESS NAME]. List each step in sequence, identify who is responsible at each stage, and flag any steps that seem inefficient, duplicated, or prone to error.' },
+  { category:'research', subcategory:'AI-Assisted Research', audience:'pgr', tool:'chatgpt',
+    title:'Write a grant application section',
+    text:'Help me write the [methodology / impact / dissemination] section of a grant application for my research on [TOPIC]. The funder is [FUNDER NAME] and the maximum word count for this section is [WORD COUNT]. My research aims are [AIMS].' },
+
+  // ── Additional Email prompts ──
+  { category:'email', subcategory:'Student Communication', audience:'academic', tool:'copilot',
+    title:'Send a weekly module update',
+    text:'Draft a brief weekly update email to students on [MODULE NAME]. Cover: what was covered this week, what is coming up next week, any deadlines or reminders, and a tip or resource. Keep it under 200 words with a friendly but professional tone.' },
+  { category:'email', subcategory:'Student Communication', audience:'pgr', tool:'copilot',
+    title:'Apply for a conference bursary',
+    text:'Help me draft a short application for a conference bursary to attend [CONFERENCE NAME]. I am a PhD researcher at the University of Southampton working on [TOPIC]. The conference is relevant because [REASON]. The amount I am requesting is [AMOUNT]. Word limit: [LIMIT].' },
+  { category:'email', subcategory:'Student Communication', audience:'pgr', tool:'chatgpt',
+    title:'Write a professional bio',
+    text:'Help me write a short professional biography for [conference programme / university website / grant application]. I am a PhD researcher at the University of Southampton working on [TOPIC]. My background is [BRIEF BACKGROUND]. Target length: [WORD COUNT] words.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'copilot',
+    title:'Prepare a briefing note',
+    text:'Write a one-page briefing note for [SENIOR LEADER / COMMITTEE] on [TOPIC]. Include: background, current situation, key issues or risks, options for consideration, and a recommended course of action.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'academic', tool:'chatgpt',
+    title:'Write a collaboration proposal',
+    text:'Draft a short proposal email to [COLLEAGUE / EXTERNAL PARTNER] suggesting a collaboration on [TOPIC OR PROJECT]. Explain the idea, the mutual benefit, what you are asking of them, and suggested next steps. Keep it under 300 words.' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'professional', tool:'claude',
+    title:'Write a handover note',
+    text:'Help me write a clear handover note for [ROLE / PROJECT / TASK]. Include: current status, key contacts, outstanding actions, important deadlines, known risks, and where to find relevant documents. The person taking over has [DESCRIBE THEIR FAMILIARITY WITH THE AREA].' },
+  { category:'email', subcategory:'Colleague & Stakeholder Communication', audience:'pgr', tool:'claude',
+    title:'Respond to reviewer comments',
+    text:'Help me draft a professional response to reviewer comments on my paper or thesis chapter. For each comment acknowledge the point raised and explain either the change I have made or my reason for not making a change. Reviewer comments: [PASTE COMMENTS]' },
+  { category:'email', subcategory:'Difficult Conversations', audience:'professional', tool:'claude',
+    title:'Deliver difficult news clearly',
+    text:'Help me draft an email delivering the following difficult news to [AUDIENCE]: [DESCRIBE NEWS]. The tone should be honest, empathetic, and constructive. Include what support is available and what happens next. Avoid corporate jargon.' },
+  { category:'email', subcategory:'Difficult Conversations', audience:'academic', tool:'claude',
+    title:'Respond to a colleague complaint',
+    text:'Help me draft a professional response to a complaint raised by a colleague about [ISSUE]: [DESCRIBE COMPLAINT]. Acknowledge the concern, explain the context from my perspective, and suggest a way forward without escalating the situation.' },
+
+  // ── Additional Data prompts ──
+  { category:'data', subcategory:'Performance & Analytics', audience:'professional', tool:'claude',
+    title:'Write a lessons learned report',
+    text:'Help me write a lessons learned report for [PROJECT NAME]. Include: what went well, what could have been done better, what was unexpected, and recommendations for future similar projects. Base this on: [PASTE NOTES OR SUMMARY].' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'academic', tool:'chatgpt',
+    title:'Analyse grade distributions',
+    text:'I have the following grade distribution data for [MODULE NAME]: [PASTE DATA]. Analyse the distribution and comment on: whether it appears appropriate for the level, any concerns about grade inflation or deflation, and whether the spread suggests the assessment is discriminating effectively.' },
+  { category:'data', subcategory:'Performance & Analytics', audience:'pgr', tool:'copilot',
+    title:'Describe your research sample',
+    text:'Help me write a clear description of my research sample for my thesis. My sample consisted of [DESCRIBE SAMPLE]. I recruited participants through [METHOD]. The inclusion criteria were [CRITERIA]. Address any limitations of the sample and its representativeness.' },
+  { category:'data', subcategory:'Writing with Data', audience:'academic', tool:'copilot',
+    title:'Turn data into a narrative',
+    text:'Help me write a narrative around the following data for [AUDIENCE]. The data relates to [TOPIC]. Key figures: [PASTE DATA]. The narrative should be no more than 200 words, explain what the data means in plain English, and end with a clear implication or recommendation.' },
+  { category:'data', subcategory:'Writing with Data', audience:'professional', tool:'chatgpt',
+    title:'Draft a consultation response',
+    text:'Help me draft a response to the following consultation on [POLICY OR REGULATION]: [DESCRIBE]. My position is [POSITION]. Key evidence I want to cite: [EVIDENCE]. The response should be structured, evidence-based, and no more than [WORD COUNT] words.' },
+  { category:'data', subcategory:'Writing with Data', audience:'academic', tool:'gemini',
+    title:'Frame your contribution to knowledge',
+    text:'Help me articulate the contribution to knowledge that my research on [TOPIC] makes. My key findings are [FINDINGS]. The gap in existing literature I addressed is [GAP]. Write a clear and confident statement suitable for a thesis introduction or abstract.' },
+  { category:'data', subcategory:'Planning & Design', audience:'professional', tool:'chatgpt',
+    title:'Write a stakeholder engagement plan',
+    text:'Help me write a stakeholder engagement plan for [PROJECT OR INITIATIVE]. Identify the key stakeholder groups, their interest and influence level, and the appropriate engagement approach for each. Include a suggested communication timeline.' },
+  { category:'data', subcategory:'Planning & Design', audience:'pgr', tool:'claude',
+    title:'Write a risk register',
+    text:'Help me create a risk register for my PhD research project on [TOPIC]. Identify eight to ten realistic risks across categories such as data collection, methodology, supervision, funding, and wellbeing. For each risk include: description, likelihood, impact, and mitigation.' },
+  { category:'data', subcategory:'Planning & Design', audience:'professional', tool:'copilot',
+    title:'Write a project initiation document',
+    text:'Help me write a project initiation document for [PROJECT NAME]. Include: purpose, scope, objectives, key deliverables, stakeholders, timeline, resource requirements, risks, and governance arrangements. Keep it to two pages maximum.' },
+
+];
+
+let activeAudience = 'all';
+let activeCategory = 'all';
+
+function setFilter(type, value, btn) {
+  const row = btn.parentElement;
+  row.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (type === 'audience') activeAudience = value;
+  if (type === 'category') activeCategory = value;
+  filterAll();
+}
+
+function filterAll() {
+  const search = document.getElementById('search').value.toLowerCase();
+  let visible = 0;
+  document.querySelectorAll('.prompt-card').forEach(card => {
+    const audMatch = activeAudience === 'all' || card.dataset.audience === activeAudience;
+    const catMatch = activeCategory === 'all' || card.dataset.category === activeCategory;
+    const searchMatch = !search || card.dataset.searchtext.includes(search);
+    if (audMatch && catMatch && searchMatch) { card.classList.remove('hidden'); visible++; }
+    else { card.classList.add('hidden'); }
+  });
+  document.querySelectorAll('.subcategory-section').forEach(s => {
+    s.style.display = s.querySelectorAll('.prompt-card:not(.hidden)').length ? '' : 'none';
+  });
+  document.querySelectorAll('.audience-section').forEach(s => {
+    s.style.display = s.querySelectorAll('.prompt-card:not(.hidden)').length ? '' : 'none';
+  });
+  document.querySelectorAll('.category-section').forEach(s => {
+    s.style.display = s.querySelectorAll('.prompt-card:not(.hidden)').length ? '' : 'none';
+  });
+  document.getElementById('no-results').classList.toggle('visible', visible === 0);
+  document.getElementById('results-info').textContent = `Showing ${visible} prompt${visible !== 1 ? 's' : ''}`;
+
+  // Update sidebar counts
+  document.querySelectorAll('.sidebar-item[data-cat]').forEach(item => {
+    const cat = item.dataset.cat;
+    const count = cat === 'all'
+      ? document.querySelectorAll('.prompt-card:not(.hidden)').length
+      : document.querySelectorAll(`.prompt-card:not(.hidden)[data-category="${cat}"]`).length;
+    const label = item.dataset.label;
+    item.textContent = `${item.dataset.icon} ${label} (${count})`;
+  });
+}
+
+function copyPrompt(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⧉ Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function toolClass(t) { return t; }
+function toolName(t) { return {chatgpt:'ChatGPT',claude:'Claude',copilot:'Copilot',gemini:'Gemini'}[t] || t; }
+
+function scrollTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function buildUI() {
+  const categories = [
+    { key:'writing',  label:'Writing & Editing',       icon:'✍️' },
+    { key:'research', label:'Research & Summarising',   icon:'🔍' },
+    { key:'email',    label:'Email & Communication',    icon:'✉️' },
+    { key:'data',     label:'Data & Reporting',         icon:'📊' },
+  ];
+  const audiences = [
+    { key:'academic',     label:'Academic Staff' },
+    { key:'professional', label:'Professional Services' },
+    { key:'pgr',          label:'Postgraduate Researchers' },
+  ];
+
+  const main = document.getElementById('main-content');
+  const sidebar = document.getElementById('sidebar-nav');
+  let totalCount = 0;
+
+  // All item in sidebar
+  const allItem = document.createElement('div');
+  allItem.className = 'sidebar-item active';
+  allItem.dataset.cat = 'all'; allItem.dataset.label = 'All Prompts'; allItem.dataset.icon = '📚';
+  allItem.textContent = '📚 All Prompts';
+  allItem.onclick = () => {
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    allItem.classList.add('active');
+    window.scrollTo({ top: 0, behavior:'smooth' });
+  };
+  sidebar.appendChild(allItem);
+
+  categories.forEach(cat => {
+    const catPrompts = prompts.filter(p => p.category === cat.key);
+    totalCount += catPrompts.length;
+
+    // Sidebar item
+    const sItem = document.createElement('div');
+    sItem.className = 'sidebar-item';
+    sItem.dataset.cat = cat.key; sItem.dataset.label = cat.label; sItem.dataset.icon = cat.icon;
+    sItem.textContent = `${cat.icon} ${cat.label} (${catPrompts.length})`;
+    sItem.onclick = () => {
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      sItem.classList.add('active');
+      scrollTo('cat-' + cat.key);
+    };
+    sidebar.appendChild(sItem);
+
+    // Main section
+    const section = document.createElement('div');
+    section.className = 'category-section';
+    section.id = 'cat-' + cat.key;
+    section.innerHTML = `
+      <div class="category-header">
+        <div class="category-icon">${cat.icon}</div>
+        <h2 class="category-title">${cat.label}</h2>
+        <span class="category-count">${catPrompts.length} prompts</span>
+      </div>`;
+
+    // Group by subcategory
+    const subcats = [...new Set(catPrompts.map(p => p.subcategory))];
+    subcats.forEach(sub => {
+      const subPrompts = catPrompts.filter(p => p.subcategory === sub);
+      const subSection = document.createElement('div');
+      subSection.className = 'subcategory-section';
+      subSection.innerHTML = `<div class="subcategory-label">${sub}</div>`;
+
+      audiences.forEach(aud => {
+        const audPrompts = subPrompts.filter(p => p.audience === aud.key);
+        if (!audPrompts.length) return;
+        const audSection = document.createElement('div');
+        audSection.className = 'audience-section';
+        audSection.innerHTML = `<div class="audience-label">${aud.label}</div>`;
+        const grid = document.createElement('div');
+        grid.className = 'prompt-grid';
+
+        audPrompts.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'prompt-card';
+          card.dataset.audience = p.audience;
+          card.dataset.category = p.category;
+          card.dataset.searchtext = (p.title + ' ' + p.text + ' ' + p.subcategory).toLowerCase();
+          const safeText = p.text.replace(/`/g,"'").replace(/\\/g,"\\\\");
+          const highlighted = p.text.replace(/\[([^\]]+)\]/g,'<span class="placeholder">[$1]</span>');
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="prompt-title">${p.title}</div>
+              <span class="tool-badge ${toolClass(p.tool)}"><span class="tool-dot"></span>${toolName(p.tool)}</span>
+            </div>
+            <div class="prompt-text">${highlighted}</div>
+            <div class="card-footer">
+              <button class="copy-btn" onclick="copyPrompt(this,\`${safeText}\`)">⧉ Copy</button>
+            </div>`;
+          grid.appendChild(card);
+        });
+        audSection.appendChild(grid);
+        subSection.appendChild(audSection);
+      });
+      section.appendChild(subSection);
+    });
+    main.appendChild(section);
+  });
+
+  document.getElementById('total-count').textContent = totalCount;
+  filterAll();
+}
+
+buildUI();
+</script>
+</body>
+</html>

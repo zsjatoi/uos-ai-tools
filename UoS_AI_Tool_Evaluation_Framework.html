@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Tool Evaluation Framework — University of Southampton</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #002147;
+    --navy-light: #003366;
+    --gold: #C9A84C;
+    --gold-light: #e8c97a;
+    --cream: #FAF8F4;
+    --text: #1a1a2e;
+    --text-muted: #5a5a7a;
+    --border: #e2ddd4;
+    --green: #1a7f4b;
+    --green-bg: #edf7f2;
+    --amber: #b45309;
+    --amber-bg: #fef3e2;
+    --red: #b91c1c;
+    --red-bg: #fef2f2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); }
+
+  /* HEADER */
+  header { background: var(--navy); box-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+  .header-inner { max-width: 960px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 14px; }
+  .header-logo { width: 42px; height: 42px; background: var(--gold); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--navy); flex-shrink: 0; }
+  .header-text h1 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; color: white; }
+  .header-text p { font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 60%, #005599 100%); color: white; padding: 48px 24px 40px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content:''; position:absolute; top:-60px; right:-60px; width:280px; height:280px; background:radial-gradient(circle,rgba(201,168,76,.15) 0%,transparent 70%); border-radius:50%; pointer-events:none; }
+  .hero h2 { font-family:'DM Serif Display',serif; font-size:2rem; font-weight:400; margin-bottom:10px; position:relative; z-index:1; }
+  .hero h2 em { color:var(--gold-light); font-style:italic; }
+  .hero p { font-size:.9rem; color:rgba(255,255,255,.75); max-width:560px; margin:0 auto; line-height:1.6; position:relative; z-index:1; font-weight:300; }
+
+  /* MAIN */
+  .main { max-width: 960px; margin: 0 auto; padding: 36px 24px 100px; }
+
+  /* PANELS */
+  .panel { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 16px rgba(0,33,71,0.07); }
+  .panel h3 { font-family:'DM Serif Display',serif; font-size:1.15rem; color:var(--navy); margin-bottom:18px; font-weight:400; }
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .info-field label { display:block; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); font-weight:600; margin-bottom:5px; }
+  .info-field input, .info-field select, .info-field textarea { width:100%; padding:9px 13px; border:1.5px solid var(--border); border-radius:7px; font-family:'DM Sans',sans-serif; font-size:0.85rem; color:var(--text); background:var(--cream); transition:border-color .2s; outline:none; }
+  .info-field input:focus, .info-field select:focus, .info-field textarea:focus { border-color:var(--navy); background:white; }
+  .info-field textarea { resize:vertical; min-height:56px; }
+  .info-field.full { grid-column:1/-1; }
+
+  /* EVAL SECTIONS */
+  .eval-section { background:white; border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:20px; box-shadow:0 2px 16px rgba(0,33,71,0.07); }
+  .section-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; padding-bottom:12px; border-bottom:2px solid var(--navy); flex-wrap:wrap; }
+  .section-icon { width:36px; height:36px; background:var(--navy); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .section-title { font-family:'DM Serif Display',serif; font-size:1.1rem; color:var(--navy); font-weight:400; }
+  .section-badge { margin-left:auto; padding:3px 9px; border-radius:10px; font-size:0.68rem; font-weight:600; white-space:nowrap; }
+  .badge-essential { background:#fee2e2; color:var(--red); }
+  .badge-important { background:#fef3e2; color:var(--amber); }
+  .badge-desirable { background:#edf7f2; color:var(--green); }
+
+  /* CRITERIA */
+  .criteria-row { display:grid; grid-template-columns:1fr 160px 1fr; gap:14px; align-items:start; padding:12px 0; border-bottom:1px solid var(--border); }
+  .criteria-row:last-child { border-bottom:none; padding-bottom:0; }
+  .criteria-label { font-size:0.84rem; font-weight:600; color:var(--text); line-height:1.35; }
+  .criteria-desc { font-size:0.75rem; color:var(--text-muted); margin-top:3px; line-height:1.5; font-weight:300; }
+  .score-selector label { display:block; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); font-weight:600; margin-bottom:4px; }
+  .score-selector select { width:100%; padding:7px 10px; border:1.5px solid var(--border); border-radius:7px; font-family:'DM Sans',sans-serif; font-size:0.8rem; color:var(--text); background:var(--cream); cursor:pointer; outline:none; transition:all .2s; }
+  .score-selector select:focus { border-color:var(--navy); }
+  .score-selector select.s0 { border-color:var(--red); background:var(--red-bg); color:var(--red); }
+  .score-selector select.s1 { border-color:#d97706; background:var(--amber-bg); color:var(--amber); }
+  .score-selector select.s2 { border-color:#16a34a; background:var(--green-bg); color:var(--green); }
+  .notes-field { width:100%; padding:7px 11px; border:1.5px solid var(--border); border-radius:7px; font-family:'DM Sans',sans-serif; font-size:0.78rem; color:var(--text); background:var(--cream); resize:vertical; min-height:44px; outline:none; transition:border-color .2s; }
+  .notes-field:focus { border-color:var(--navy); background:white; }
+
+  /* FLOATING PANEL — fixed bottom right, always visible */
+  .float-panel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 300px;
+    background: var(--navy);
+    color: white;
+    border-radius: 14px;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.4);
+    z-index: 500;
+  }
+  .fp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    user-select: none; border-radius: 14px 14px 0 0;
+  }
+  .fp-header:hover { background: rgba(255,255,255,0.05); }
+  .fp-title { font-family:'DM Serif Display',serif; font-size:0.95rem; color:var(--gold-light); }
+  .fp-toggle { width:26px; height:26px; background:rgba(255,255,255,0.12); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+  .fp-body { padding:16px 18px 18px; max-height:75vh; overflow-y:auto; }
+  .fp-body.hidden { display:none; }
+
+  .fp-bar-wrap { width:100%; height:6px; background:rgba(255,255,255,0.15); border-radius:3px; margin-bottom:14px; overflow:hidden; }
+  .fp-bar { height:100%; border-radius:3px; width:0%; background:var(--gold); transition:width .4s,background .4s; }
+  .fp-score-line { display:flex; align-items:flex-end; gap:8px; margin-bottom:12px; }
+  .fp-score-num { font-family:'DM Serif Display',serif; font-size:2.4rem; color:white; line-height:1; }
+  .fp-score-lbl { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.55); padding-bottom:6px; }
+  .fp-verdict { border-radius:8px; padding:10px 14px; margin-bottom:14px; text-align:center; }
+  .fp-verdict.proceed { background:var(--green-bg); }
+  .fp-verdict.caution { background:var(--amber-bg); }
+  .fp-verdict.reject  { background:var(--red-bg); }
+  .fp-vl { font-size:0.85rem; font-weight:700; }
+  .fp-vl.proceed { color:var(--green); }
+  .fp-vl.caution  { color:var(--amber); }
+  .fp-vl.reject   { color:var(--red); }
+  .fp-vd { font-size:0.72rem; color:var(--text-muted); margin-top:3px; line-height:1.4; }
+  .fp-secs { margin-bottom:14px; }
+  .fp-sr { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:0.76rem; }
+  .fp-sr:last-child { border-bottom:none; }
+  .fp-sn { color:rgba(255,255,255,0.75); }
+  .fp-sv { font-weight:600; color:white; }
+  .fp-flags { margin-bottom:12px; }
+  .fp-flag { display:flex; gap:6px; padding:7px 10px; background:var(--red-bg); border-radius:6px; margin-bottom:5px; font-size:0.72rem; color:var(--red); border:1px solid #fca5a5; }
+  .fp-divider { height:1px; background:rgba(255,255,255,0.12); margin:14px 0; }
+  .fp-btn { width:100%; padding:10px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all .2s; margin-bottom:8px; display:block; text-align:center; }
+  .fp-btn:last-child { margin-bottom:0; }
+  .fp-btn-gold { background:var(--gold); color:var(--navy); }
+  .fp-btn-gold:hover { background:var(--gold-light); }
+  .fp-btn-save { background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.25); color:white; }
+  .fp-btn-save:hover { background:rgba(255,255,255,0.18); }
+  .fp-btn-reset { background:transparent; border:1.5px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.7); font-size:0.76rem; }
+  .fp-btn-reset:hover { background:rgba(255,255,255,0.08); color:white; }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:white; border-radius:14px; padding:32px 28px; max-width:440px; width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.3); text-align:center; animation:mIn .25s ease; }
+  @keyframes mIn { from{transform:scale(.93);opacity:0} to{transform:scale(1);opacity:1} }
+  .modal-icon { font-size:2.8rem; margin-bottom:14px; display:block; }
+  .modal-title { font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--navy); margin-bottom:8px; font-weight:400; }
+  .modal-body { font-size:0.84rem; color:var(--text-muted); line-height:1.6; margin-bottom:20px; }
+  .modal-note { background:var(--cream); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:0.76rem; color:var(--text-muted); text-align:left; margin-bottom:20px; line-height:1.6; }
+  .modal-note strong { color:var(--navy); }
+  .modal-close { padding:10px 26px; background:var(--navy); border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; color:white; cursor:pointer; }
+  .modal-close:hover { background:var(--navy-light); }
+
+  /* FOOTER */
+  footer { background:var(--navy); color:rgba(255,255,255,0.5); text-align:center; padding:22px 24px; font-size:0.76rem; font-weight:300; }
+  footer strong { color:var(--gold-light); font-weight:500; }
+
+  /* RESPONSIVE */
+  @media(max-width:700px) {
+    .info-grid { grid-template-columns:1fr; }
+    .criteria-row { grid-template-columns:1fr; gap:10px; }
+    .section-badge { margin-left:0; }
+    .float-panel { width:calc(100% - 32px); right:16px; bottom:16px; }
+    .hero h2 { font-size:1.5rem; }
+    .main { padding:20px 16px 120px; }
+    .panel, .eval-section { padding:18px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-logo">S</div>
+    <div class="header-text">
+      <h1>AI Tool Evaluation Framework</h1>
+      <p>University of Southampton &mdash; Digital Innovation &amp; AI</p>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <h2>Evaluate <em>before</em> you adopt</h2>
+  <p>A structured framework for assessing AI tools against institutional requirements before recommending them for use across Education and Professional Services.</p>
+</div>
+
+<div class="main">
+
+  <div class="panel">
+    <h3>Tool Information</h3>
+    <div class="info-grid">
+      <div class="info-field">
+        <label>Tool Name</label>
+        <input type="text" id="tool-name" placeholder="e.g. Microsoft Copilot, ChatGPT Enterprise">
+      </div>
+      <div class="info-field">
+        <label>Vendor</label>
+        <input type="text" id="tool-vendor" placeholder="e.g. Microsoft, OpenAI">
+      </div>
+      <div class="info-field">
+        <label>Evaluator</label>
+        <input type="text" id="tool-evaluator" placeholder="Your name">
+      </div>
+      <div class="info-field">
+        <label>Date of Evaluation</label>
+        <input type="date" id="tool-date">
+      </div>
+      <div class="info-field">
+        <label>Proposed Use Case</label>
+        <input type="text" id="tool-usecase" placeholder="e.g. AI writing support for academic staff">
+      </div>
+      <div class="info-field">
+        <label>Target Audience</label>
+        <select id="tool-audience">
+          <option value="">Select audience</option>
+          <option>Academic Staff</option>
+          <option>Professional Services Staff</option>
+          <option>Postgraduate Researchers</option>
+          <option>Undergraduate Students</option>
+          <option>All Staff</option>
+          <option>All Staff and Students</option>
+        </select>
+      </div>
+      <div class="info-field full">
+        <label>Brief Description of Tool</label>
+        <textarea id="tool-desc" placeholder="Describe what the tool does in plain English..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="sections-container"></div>
+
+</div>
+
+<footer>
+  Developed by <strong>Dr Zubair Shafiq</strong> &mdash; Learning Designer, Digital Learning, iSolutions &mdash; University of Southampton &mdash; 2026
+</footer>
+
+<!-- FLOATING RESULTS PANEL -->
+<div class="float-panel" id="float-panel">
+  <div class="fp-header" onclick="togglePanel()">
+    <span class="fp-title">🎯 Evaluation Results</span>
+    <span class="fp-toggle" id="fp-toggle-icon">▼</span>
+  </div>
+  <div class="fp-body" id="fp-body">
+    <div class="fp-bar-wrap"><div class="fp-bar" id="fp-bar"></div></div>
+    <div class="fp-score-line">
+      <div class="fp-score-num" id="fp-score">—</div>
+      <div class="fp-score-lbl">Overall<br>Score</div>
+    </div>
+    <div class="fp-verdict caution" id="fp-verdict">
+      <div class="fp-vl caution" id="fp-vl">Complete the evaluation</div>
+      <div class="fp-vd" id="fp-vd">Score all criteria to see your recommendation.</div>
+    </div>
+    <div class="fp-secs" id="fp-secs"></div>
+    <div class="fp-flags" id="fp-flags"></div>
+    <div class="fp-divider"></div>
+    <button class="fp-btn fp-btn-gold" onclick="exportReport()">⬇ Export Report</button>
+    <button class="fp-btn fp-btn-save" onclick="saveEval()">☁ Save to SharePoint List</button>
+    <button class="fp-btn fp-btn-reset" onclick="resetAll()">↺ Reset Evaluation</button>
+  </div>
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay" id="save-modal">
+  <div class="modal">
+    <span class="modal-icon" id="m-icon">☁</span>
+    <h3 class="modal-title" id="m-title">Saving Evaluation...</h3>
+    <p class="modal-body" id="m-body">Sending <strong id="m-tool">this evaluation</strong> to the SharePoint List...</p>
+    <div class="modal-note" id="m-note" style="display:none">
+      <strong>Note for reviewers:</strong> In this prototype, data is not yet connected to a live SharePoint List.
+      In full deployment, this button would send all scores, notes, and the overall verdict to a
+      <strong>Microsoft List via Power Automate</strong>, creating a permanent searchable record of every evaluation.
+      A <strong>Power BI dashboard</strong> on top of that list would allow the team to compare tools, track
+      evaluations over time, and report to senior leadership — mirroring the Microsoft List and Power BI
+      dashboard already in use for the Thesis Support Service.
+    </div>
+    <button class="modal-close" id="m-close" onclick="closeModal()" style="display:none">Got it</button>
+  </div>
+</div>
+
+<script>
+const sections = [
+  { key:'data', icon:'🔒', title:'Data Protection & Privacy', badge:'essential', label:'Essential — Blocker if failed', blocker:true, criteria:[
+    { id:'d1', label:'UK GDPR Compliance', desc:'Does the tool comply with UK GDPR? Is a Data Processing Agreement available?', w:3 },
+    { id:'d2', label:'Data Storage Location', desc:'Is user data stored within the UK or EEA? Is data residency clearly documented?', w:3 },
+    { id:'d3', label:'Data Used for Training', desc:'Does the tool use user inputs to train its models? Can this be disabled?', w:3 },
+    { id:'d4', label:'Data Retention Policy', desc:'How long does the vendor retain user data? Is there a clear deletion process?', w:2 },
+    { id:'d5', label:'Sensitive Data Handling', desc:'Is the tool suitable for use with sensitive or personal data such as student records?', w:3 },
+    { id:'d6', label:'Privacy Notice Transparency', desc:'Is the vendor\'s privacy notice clear, accessible, and up to date?', w:1 },
+  ]},
+  { key:'sec', icon:'🛡️', title:'Security & Access', badge:'essential', label:'Essential — Blocker if failed', blocker:true, criteria:[
+    { id:'s1', label:'Single Sign-On (SSO)', desc:'Does the tool support SSO with the university\'s Microsoft Entra ID?', w:3 },
+    { id:'s2', label:'Role-Based Access Control', desc:'Can access be restricted by role, department, or user group?', w:2 },
+    { id:'s3', label:'Security Certifications', desc:'Does the vendor hold ISO 27001, SOC 2, or Cyber Essentials certification?', w:2 },
+    { id:'s4', label:'Penetration Testing', desc:'Has the tool been independently penetration tested?', w:2 },
+    { id:'s5', label:'Incident Response Process', desc:'Does the vendor have a documented security incident response process with SLAs?', w:2 },
+    { id:'s6', label:'API Security', desc:'If an API is used, is it secured with appropriate authentication and rate limiting?', w:1 },
+  ]},
+  { key:'acc', icon:'♿', title:'Accessibility & Inclusion', badge:'essential', label:'Essential — Required under PSBAR', blocker:true, criteria:[
+    { id:'a1', label:'WCAG 2.1 AA Compliance', desc:'Does the tool meet WCAG 2.1 Level AA? Is an accessibility statement published?', w:3 },
+    { id:'a2', label:'Screen Reader Compatibility', desc:'Is the tool compatible with NVDA, JAWS, and VoiceOver?', w:3 },
+    { id:'a3', label:'Keyboard Navigation', desc:'Can all tool functions be accessed via keyboard without a mouse?', w:2 },
+    { id:'a4', label:'Colour Contrast', desc:'Does the interface meet minimum colour contrast ratios?', w:2 },
+    { id:'a5', label:'Captions and Transcripts', desc:'If the tool generates audio or video, are captions or transcripts provided?', w:2 },
+    { id:'a6', label:'Mobile Accessibility', desc:'Is the tool fully usable on mobile devices with assistive technology?', w:1 },
+  ]},
+  { key:'ped', icon:'🎓', title:'Pedagogical Suitability', badge:'important', label:'Important', blocker:false, criteria:[
+    { id:'p1', label:'Alignment with Learning Outcomes', desc:'Does the tool support the achievement of identified learning or development outcomes?', w:3 },
+    { id:'p2', label:'Evidence of Effectiveness', desc:'Is there peer-reviewed or institutional evidence that the tool improves learning?', w:2 },
+    { id:'p3', label:'Appropriate for Target Audience', desc:'Is the tool\'s complexity and content appropriate for the intended users?', w:2 },
+    { id:'p4', label:'Academic Integrity Implications', desc:'Has the potential impact on academic integrity been considered?', w:3 },
+    { id:'p5', label:'Bias and Hallucination Risk', desc:'Has the tool been tested for bias, inaccuracy, or hallucination in relevant use cases?', w:2 },
+    { id:'p6', label:'Supports Critical Thinking', desc:'Does the tool encourage users to evaluate outputs critically rather than accept them uncritically?', w:2 },
+  ]},
+  { key:'tec', icon:'⚙️', title:'Technical Integration', badge:'important', label:'Important', blocker:false, criteria:[
+    { id:'t1', label:'Integration with Microsoft 365', desc:'Does the tool integrate with the university\'s Microsoft 365 environment?', w:3 },
+    { id:'t2', label:'VLE Compatibility', desc:'Can the tool be embedded in or linked from Blackboard Ultra?', w:2 },
+    { id:'t3', label:'Browser and Device Compatibility', desc:'Does the tool function consistently across common browsers and devices?', w:2 },
+    { id:'t4', label:'Uptime and Reliability', desc:'Does the vendor publish uptime SLAs? Is the reliability track record acceptable?', w:2 },
+    { id:'t5', label:'API Availability', desc:'Is a documented API available for potential custom integrations?', w:1 },
+    { id:'t6', label:'IT Support Requirements', desc:'What level of ongoing IT support would deployment require?', w:2 },
+  ]},
+  { key:'cos', icon:'💷', title:'Cost & Sustainability', badge:'important', label:'Important', blocker:false, criteria:[
+    { id:'c1', label:'Cost Model Transparency', desc:'Is the pricing model clear and predictable with no hidden costs?', w:2 },
+    { id:'c2', label:'Value for Money', desc:'Does the tool provide sufficient value relative to its cost?', w:2 },
+    { id:'c3', label:'Procurement Route', desc:'Is the tool available via an existing university contract or approved vendor list?', w:2 },
+    { id:'c4', label:'Scalability of Licensing', desc:'Can the licence scale up or down to match institutional demand without penalty?', w:1 },
+    { id:'c5', label:'Vendor Stability', desc:'Is the vendor financially stable and likely to support the tool long term?', w:2 },
+    { id:'c6', label:'Exit Strategy', desc:'If the tool is discontinued, can data be exported and users migrated without disruption?', w:2 },
+  ]},
+  { key:'eth', icon:'⚖️', title:'Ethics & Responsible AI', badge:'important', label:'Important', blocker:false, criteria:[
+    { id:'e1', label:'Transparency of AI Decision-Making', desc:'Does the tool explain how it generates outputs?', w:2 },
+    { id:'e2', label:'Alignment with University AI Policy', desc:'Is the tool\'s use consistent with the university\'s current AI policy and values?', w:3 },
+    { id:'e3', label:'Environmental Impact', desc:'Has the vendor published information about the tool\'s energy consumption?', w:1 },
+    { id:'e4', label:'Equity of Access', desc:'Can all intended users access the tool equally regardless of disability or device?', w:2 },
+    { id:'e5', label:'Intellectual Property Clarity', desc:'Is ownership of outputs generated by the tool clearly defined in the terms of service?', w:2 },
+    { id:'e6', label:'User Consent and Transparency', desc:'Are users clearly informed when they are interacting with AI-generated content?', w:2 },
+  ]},
+  { key:'usa', icon:'🖥️', title:'Usability & Adoption', badge:'desirable', label:'Desirable', blocker:false, criteria:[
+    { id:'u1', label:'Ease of Use for Non-Technical Users', desc:'Can staff or students use the tool effectively without specialist training?', w:2 },
+    { id:'u2', label:'Quality of Documentation', desc:'Is the vendor\'s user documentation clear, current, and accessible?', w:1 },
+    { id:'u3', label:'Vendor Training and Support', desc:'Does the vendor offer training materials or onboarding support?', w:1 },
+    { id:'u4', label:'User Interface Quality', desc:'Is the interface intuitive and well-designed?', w:2 },
+    { id:'u5', label:'Adoption Evidence', desc:'Is there evidence of successful adoption in comparable UK higher education institutions?', w:2 },
+    { id:'u6', label:'Customisation Options', desc:'Can the tool be configured to reflect institutional branding or workflows?', w:1 },
+  ]},
+];
+
+function buildSections() {
+  const container = document.getElementById('sections-container');
+  sections.forEach(sec => {
+    const div = document.createElement('div');
+    div.className = 'eval-section';
+    div.innerHTML = `
+      <div class="section-header">
+        <div class="section-icon">${sec.icon}</div>
+        <h2 class="section-title">${sec.title}</h2>
+        <span class="section-badge badge-${sec.badge}">${sec.label}</span>
+      </div>`;
+    sec.criteria.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'criteria-row';
+      row.innerHTML = `
+        <div>
+          <div class="criteria-label">${c.label}</div>
+          <div class="criteria-desc">${c.desc}</div>
+        </div>
+        <div class="score-selector">
+          <label>Score</label>
+          <select id="sc-${c.id}" onchange="onScore(this)">
+            <option value="na">— Not scored</option>
+            <option value="0">✗ Does not meet</option>
+            <option value="1">~ Partially meets</option>
+            <option value="2">✓ Fully meets</option>
+            <option value="na2">N/A</option>
+          </select>
+        </div>
+        <div>
+          <textarea class="notes-field" id="nt-${c.id}" placeholder="Notes or evidence..." oninput="recalc()"></textarea>
+        </div>`;
+      div.appendChild(row);
+    });
+    container.appendChild(div);
+  });
+}
+
+function onScore(sel) {
+  sel.className = '';
+  if (sel.value==='0') sel.className='s0';
+  else if (sel.value==='1') sel.className='s1';
+  else if (sel.value==='2') sel.className='s2';
+  recalc();
+}
+
+function recalc() {
+  let ts=0, tm=0;
+  const secs=[], flags=[];
+  sections.forEach(sec => {
+    let ss=0, sm=0, fails=0;
+    sec.criteria.forEach(c => {
+      const v = document.getElementById('sc-'+c.id)?.value;
+      if (!v||v==='na'||v==='na2') return;
+      const n=parseInt(v); ss+=n*c.w; sm+=2*c.w;
+      if(n===0&&sec.blocker) fails++;
+    });
+    secs.push({icon:sec.icon,title:sec.title,pct:sm>0?Math.round((ss/sm)*100):null});
+    ts+=ss; tm+=sm;
+    if(fails>0) flags.push(`${sec.icon} ${sec.title}: ${fails} blocker failed`);
+  });
+  const ov = tm>0?Math.round((ts/tm)*100):null;
+
+  const bar=document.getElementById('fp-bar');
+  bar.style.width=(ov??0)+'%';
+  bar.style.background=ov===null?'var(--gold)':ov>=75?'#22c55e':ov>=50?'#f59e0b':'#ef4444';
+  document.getElementById('fp-score').textContent=ov!==null?ov+'%':'—';
+
+  const vBox=document.getElementById('fp-verdict');
+  const vl=document.getElementById('fp-vl');
+  const vd=document.getElementById('fp-vd');
+  if(flags.length>0){
+    vBox.className='fp-verdict reject'; vl.className='fp-vl reject';
+    vl.textContent='✗ Do Not Proceed';
+    vd.textContent='One or more blocker criteria have failed.';
+  } else if(ov===null){
+    vBox.className='fp-verdict caution'; vl.className='fp-vl caution';
+    vl.textContent='Complete the evaluation';
+    vd.textContent='Score all criteria to see your recommendation.';
+  } else if(ov>=75){
+    vBox.className='fp-verdict proceed'; vl.className='fp-vl proceed';
+    vl.textContent='✓ Recommend for Pilot';
+    vd.textContent='The tool meets requirements. Recommend for a controlled pilot.';
+  } else if(ov>=50){
+    vBox.className='fp-verdict caution'; vl.className='fp-vl caution';
+    vl.textContent='~ Proceed with Conditions';
+    vd.textContent='Address identified gaps before wider rollout.';
+  } else {
+    vBox.className='fp-verdict reject'; vl.className='fp-vl reject';
+    vl.textContent='✗ Do Not Proceed';
+    vd.textContent='The tool does not meet enough institutional requirements.';
+  }
+
+  const secsEl=document.getElementById('fp-secs');
+  secsEl.innerHTML='';
+  secs.forEach(r=>{
+    const row=document.createElement('div');
+    row.className='fp-sr';
+    row.innerHTML=`<span class="fp-sn">${r.icon} ${r.title}</span><span class="fp-sv">${r.pct!==null?r.pct+'%':'—'}</span>`;
+    secsEl.appendChild(row);
+  });
+
+  const flagsEl=document.getElementById('fp-flags');
+  flagsEl.innerHTML='';
+  flags.forEach(f=>{
+    const el=document.createElement('div');
+    el.className='fp-flag';
+    el.innerHTML=`<span>⚠</span><span>${f}</span>`;
+    flagsEl.appendChild(el);
+  });
+}
+
+let panelOpen = true;
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('fp-body').classList.toggle('hidden', !panelOpen);
+  document.getElementById('fp-toggle-icon').textContent = panelOpen ? '▼' : '▲';
+}
+
+function resetAll() {
+  if(!confirm('Reset all scores and notes? This cannot be undone.')) return;
+  document.querySelectorAll('.score-selector select').forEach(s=>{s.value='na';s.className='';});
+  document.querySelectorAll('.notes-field').forEach(n=>n.value='');
+  ['tool-name','tool-vendor','tool-evaluator','tool-usecase','tool-desc'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('tool-audience').value='';
+  document.getElementById('tool-date').valueAsDate=new Date();
+  recalc();
+}
+
+function exportReport() {
+  const name=document.getElementById('tool-name').value||'Unnamed Tool';
+  const ev=document.getElementById('tool-evaluator').value||'Not specified';
+  const dt=document.getElementById('tool-date').value||'Not specified';
+  const uc=document.getElementById('tool-usecase').value||'Not specified';
+  const au=document.getElementById('tool-audience').value||'Not specified';
+  const ds=document.getElementById('tool-desc').value||'Not specified';
+  let r=`AI TOOL EVALUATION REPORT\nUniversity of Southampton — Digital Innovation & AI\n${'='.repeat(60)}\n\n`;
+  r+=`Tool:      ${name}\nEvaluator: ${ev}\nDate:      ${dt}\nUse Case:  ${uc}\nAudience:  ${au}\nSummary:   ${ds}\n\n${'='.repeat(60)}\n\n`;
+  sections.forEach(sec=>{
+    r+=`${sec.icon} ${sec.title.toUpperCase()}\n${'-'.repeat(40)}\n`;
+    sec.criteria.forEach(c=>{
+      const map={'0':'Does not meet','1':'Partially meets','2':'Fully meets','na':'Not scored','na2':'N/A'};
+      const v=document.getElementById('sc-'+c.id)?.value||'na';
+      const nt=document.getElementById('nt-'+c.id)?.value||'';
+      r+=`  ${c.label}\n  Score: ${map[v]||'Not scored'}\n`;
+      if(nt) r+=`  Notes: ${nt}\n`;
+      r+='\n';
+    });
+    r+='\n';
+  });
+  const blob=new Blob([r],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`AI_Evaluation_${name.replace(/\s+/g,'_')}.txt`;
+  a.click();
+}
+
+function saveEval() {
+  const name=document.getElementById('tool-name').value||'this evaluation';
+  document.getElementById('m-icon').textContent='☁';
+  document.getElementById('m-icon').style.color='';
+  document.getElementById('m-title').textContent='Saving Evaluation...';
+  document.getElementById('m-tool').textContent=name;
+  document.getElementById('m-body').style.display='block';
+  document.getElementById('m-note').style.display='none';
+  document.getElementById('m-close').style.display='none';
+  document.getElementById('save-modal').classList.add('open');
+  setTimeout(()=>{
+    document.getElementById('m-icon').textContent='✓';
+    document.getElementById('m-icon').style.color='#1a7f4b';
+    document.getElementById('m-title').textContent='Evaluation Saved';
+    document.getElementById('m-body').style.display='none';
+    document.getElementById('m-note').style.display='block';
+    document.getElementById('m-close').style.display='inline-block';
+  },1400);
+}
+
+function closeModal() {
+  document.getElementById('save-modal').classList.remove('open');
+}
+
+document.getElementById('tool-date').valueAsDate=new Date();
+buildSections();
+recalc();
+</script>
+</body>
+</html>

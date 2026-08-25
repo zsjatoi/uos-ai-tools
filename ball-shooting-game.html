@@ -124,6 +124,20 @@
     overflow: hidden;
   }
 
+  #gameArea:focus {
+    outline: 3px solid #ffbf47;
+    outline-offset: 3px;
+  }
+
+  #gameArea:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  #gameArea:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 3px;
+  }
+
   #gameCanvas {
     display: block;
     width: 100%;

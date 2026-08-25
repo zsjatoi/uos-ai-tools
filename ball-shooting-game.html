@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Ball Shooting Game</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #1c2733;
+    --panel-bg: #ffffff;
+    --panel-text: #1c1c1c;
+    --accent: #0b5fa5;
+    --accent-text: #ffffff;
+    --border: #6b6f76;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--panel-text);
+    font-family: system-ui, Segoe UI, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  h1 {
+    margin: 0.6em 0.6em 0.2em;
+    font-size: 1.4rem;
+    color: #ffffff;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 0.6em 1.5em;
+  }
+
+  #instructions {
+    max-width: 60em;
+    color: #eef2f6;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  #hud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel-bg);
+    color: var(--panel-text);
+    border-radius: 0.5rem;
+    padding: 0.6rem 1rem;
+    width: 100%;
+    max-width: 60em;
+  }
+
+  #scoreDisplay, #missesDisplay {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  button.control {
+    font-size: 1rem;
+    padding: 0.55rem 0.9rem;
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 0.4rem;
+    border: 2px solid var(--border);
+    background: var(--accent);
+    color: var(--accent-text);
+    cursor: pointer;
+  }
+
+  button.control:hover {
+    filter: brightness(1.1);
+  }
+
+  button.control:focus {
+    outline: 3px solid #1c1c1c;
+    outline-offset: 3px;
+  }
+
+  button.control:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  button.control:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 3px;
+  }
+
+  #gameArea {
+    position: relative;
+    width: 100%;
+    max-width: 60em;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  #gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Hit flash overlay */
+  #hitFlash {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Miss vignette overlay */
+  #missVignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 0 rgba(0,0,0,0);
+  }
+
+  #crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  #crosshair::before, #crosshair::after {
+    content: "";
+    position: absolute;
+    background: rgba(255,255,255,0.85);
+  }
+  #crosshair::before {
+    left: 50%; top: 0;
+    width: 2px; height: 100%;
+    transform: translateX(-50%);
+  }
+  #crosshair::after {
+    top: 50%; left: 0;
+    height: 2px; width: 100%;
+    transform: translateY(-50%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #hitFlash, #missVignette {
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>3D Ball Shooting Game</h1>
+
+<main>
+  <p id="instructions">
+    Aim is fixed straight ahead. Fire a ball at the moving red target by clicking inside the
+    game area, or by pressing the Spacebar or Enter key while the game area has focus.
+    Hitting the target's bullseye scores a point with a colourful explosion; missing it
+    briefly dims the screen edges. This is a fast-paced 3D game and is best played by
+    sighted users; a running score and a hit/miss announcement are provided as text below
+    for anyone using a screen reader.
+  </p>
+
+  <div id="hud">
+    <p id="scoreDisplay">Score: <span id="scoreValue">0</span></p>
+    <p id="missesDisplay">Misses: <span id="missValue">0</span></p>
+    <div class="controls">
+      <button type="button" class="control" id="pauseBtn" aria-pressed="false">
+        <span class="icon" aria-hidden="true">⏸</span>
+        <span id="pauseLabel">Pause game</span>
+      </button>
+      <button type="button" class="control" id="muteBtn" aria-pressed="false">
+        <span class="icon" aria-hidden="true">🔊</span>
+        <span id="muteLabel">Mute sound</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="gameArea" tabindex="0" aria-label="Game area. Click, or press Space or Enter, to shoot.">
+    <canvas id="gameCanvas" aria-hidden="true"></canvas>
+    <div id="crosshair" aria-hidden="true"></div>
+    <div id="hitFlash" aria-hidden="true"></div>
+    <div id="missVignette" aria-hidden="true"></div>
+  </div>
+
+  <div class="sr-only" role="status" aria-live="polite" id="announcer"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------------------------------------------------------------
+   * State & DOM references
+   * ------------------------------------------------------------------- */
+  var gameArea = document.getElementById("gameArea");
+  var canvas = document.getElementById("gameCanvas");
+  var hitFlash = document.getElementById("hitFlash");
+  var missVignette = document.getElementById("missVignette");
+  var announcer = document.getElementById("announcer");
+  var scoreValueEl = document.getElementById("scoreValue");
+  var missValueEl = document.getElementById("missValue");
+  var pauseBtn = document.getElementById("pauseBtn");
+  var pauseLabel = document.getElementById("pauseLabel");
+  var muteBtn = document.getElementById("muteBtn");
+  var muteLabel = document.getElementById("muteLabel");
+
+  var score = 0;
+  var misses = 0;
+  var isPaused = false;
+  var isMuted = false;
+  var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------------------------------------------------------------------
+   * Audio (Web Audio API only - no external files)
+   * ------------------------------------------------------------------- */
+  var audioCtx = null;
+  var masterGain = null;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = isMuted ? 0 : 1;
+      masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+  }
+
+  function playShootSound() {
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(650, t0);
+    osc.frequency.exponentialRampToValueAtTime(120, t0 + 0.15);
+    gain.gain.setValueAtTime(0.18, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.16);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(t0);
+    osc.stop(t0 + 0.17);
+  }
+
+  function playHitSound() {
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    playChimeNote(261.63 * 2, t0, 0.16, 0.35);       /* C5 */
+    playChimeNote(329.63 * 2, t0 + 0.13, 0.22, 0.35); /* E5 */
+  }
+
+  function playChimeNote(freq, startTime, duration, volume) {
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.02);
+  }
+
+  function playMissSound() {
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(160, t0);
+    osc.frequency.exponentialRampToValueAtTime(80, t0 + 0.2);
+    gain.gain.setValueAtTime(0.05, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(t0);
+    osc.stop(t0 + 0.23);
+  }
+
+  /* ---------------------------------------------------------------------
+   * Three.js scene setup
+   * ------------------------------------------------------------------- */
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb); /* sky blue */
+
+  var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+  camera.position.set(0, 1.5, 8);
+
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  var ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambientLight);
+  var dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+  dirLight.position.set(5, 10, 7);
+  scene.add(dirLight);
+
+  /* Ground, purely for visual reference */
+  var ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshLambertMaterial({ color: 0x4caf50 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1.5;
+  scene.add(ground);
+
+  /* Target: red cylinder facing the camera with a white bullseye */
+  var targetGroup = new THREE.Group();
+  var targetZ = -18;
+  var targetBaseY = 1.5;
+  targetGroup.position.set(0, targetBaseY, targetZ);
+
+  var targetOuter = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.4, 1.4, 0.35, 32),
+    new THREE.MeshLambertMaterial({ color: 0xdd2222 })
+  );
+  targetOuter.rotation.x = Math.PI / 2; /* axis now points along Z, face towards camera */
+  targetGroup.add(targetOuter);
+
+  var targetBullseye = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 0.4, 32),
+    new THREE.MeshLambertMaterial({ color: 0xffffff })
+  );
+  targetBullseye.rotation.x = Math.PI / 2;
+  targetGroup.add(targetBullseye);
+
+  scene.add(targetGroup);
+
+  var targetHalfWidth = 8; /* how far left/right the target travels */
+  var targetSpeed = 0.9;   /* radians per second for the sine wave */
+  var hitRadius = 1.5;     /* generous hit radius around the bullseye centre */
+
+  /* ---------------------------------------------------------------------
+   * Balls
+   * ------------------------------------------------------------------- */
+  var balls = [];
+  var ballGeometry = new THREE.SphereGeometry(0.22, 16, 16);
+  var ballColours = [0xffa500, 0xffd700]; /* orange, yellow/gold */
+  var ballSpeed = 22;
+
+  function shootBall() {
+    if (isPaused) return;
+    ensureAudio();
+    playShootSound();
+
+    var colour = ballColours[Math.floor(Math.random() * ballColours.length)];
+    var mesh = new THREE.Mesh(
+      ballGeometry,
+      new THREE.MeshLambertMaterial({ color: colour })
+    );
+    mesh.position.copy(camera.position);
+    mesh.position.y -= 0.15;
+    scene.add(mesh);
+
+    balls.push({
+      mesh: mesh,
+      velocity: new THREE.Vector3(0, 0, -ballSpeed),
+      resolved: false
+    });
+  }
+
+  /* ---------------------------------------------------------------------
+   * Explosion particles (hit effect)
+   * ------------------------------------------------------------------- */
+  var particles = [];
+  var explosionColours = [0xffd700, 0x00ffff, 0xffffff, 0xff69b4]; /* gold, cyan, white, pink */
+  var particleGeometry = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+  var gravity = 9.8;
+
+  function spawnExplosion(position) {
+    var count = reducedMotion ? 12 : 24;
+    for (var i = 0; i < count; i++) {
+      var colour = explosionColours[Math.floor(Math.random() * explosionColours.length)];
+      var mesh = new THREE.Mesh(
+        particleGeometry,
+        new THREE.MeshLambertMaterial({ color: colour })
+      );
+      mesh.position.copy(position);
+      scene.add(mesh);
+
+      var angle = Math.random() * Math.PI * 2;
+      var upSpeed = 3 + Math.random() * 4;
+      var outSpeed = 2 + Math.random() * 4;
+
+      particles.push({
+        mesh: mesh,
+        velocity: new THREE.Vector3(
+          Math.cos(angle) * outSpeed,
+          upSpeed,
+          Math.sin(angle) * outSpeed
+        ),
+        life: 1.6 + Math.random() * 0.6,
+        age: 0,
+        spin: new THREE.Vector3(
+          (Math.random() - 0.5) * 6,
+          (Math.random() - 0.5) * 6,
+          (Math.random() - 0.5) * 6
+        )
+      });
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+   * Hit / miss visual feedback
+   * ------------------------------------------------------------------- */
+  function flashHit() {
+    hitFlash.style.transition = "none";
+    hitFlash.style.opacity = "0.9";
+    /* Force reflow so the transition below actually animates from 0.9 */
+    void hitFlash.offsetWidth;
+    hitFlash.style.transition = "opacity 0.35s ease-out";
+    hitFlash.style.opacity = "0";
+  }
+
+  function flashMiss() {
+    missVignette.style.transition = "none";
+    missVignette.style.boxShadow = "inset 0 0 0 60px rgba(0,0,0,0.35)";
+    void missVignette.offsetWidth;
+    missVignette.style.transition = "box-shadow 0.6s ease-out";
+    missVignette.style.boxShadow = "inset 0 0 0 60px rgba(0,0,0,0)";
+  }
+
+  /* ---------------------------------------------------------------------
+   * Scoring & announcements
+   * ------------------------------------------------------------------- */
+  function registerHit() {
+    score += 1;
+    scoreValueEl.textContent = String(score);
+    announcer.textContent = "Hit! Score: " + score + ".";
+    ensureAudio();
+    playHitSound();
+    flashHit();
+  }
+
+  function registerMiss() {
+    misses += 1;
+    missValueEl.textContent = String(misses);
+    announcer.textContent = "Missed. Score stays at " + score + ".";
+    ensureAudio();
+    playMissSound();
+    flashMiss();
+  }
+
+  /* ---------------------------------------------------------------------
+   * Input handling
+   * ------------------------------------------------------------------- */
+  gameArea.addEventListener("click", function () {
+    shootBall();
+  });
+
+  gameArea.addEventListener("keydown", function (e) {
+    if (e.key === " " || e.code === "Space" || e.key === "Enter") {
+      e.preventDefault();
+      shootBall();
+    }
+  });
+
+  pauseBtn.addEventListener("click", function () {
+    isPaused = !isPaused;
+    pauseBtn.setAttribute("aria-pressed", String(isPaused));
+    pauseBtn.querySelector(".icon").textContent = isPaused ? "▶" : "⏸";
+    pauseLabel.textContent = isPaused ? "Resume game" : "Pause game";
+    announcer.textContent = isPaused ? "Game paused." : "Game resumed.";
+  });
+
+  muteBtn.addEventListener("click", function () {
+    isMuted = !isMuted;
+    ensureAudio();
+    if (masterGain) {
+      masterGain.gain.value = isMuted ? 0 : 1;
+    }
+    muteBtn.setAttribute("aria-pressed", String(isMuted));
+    muteBtn.querySelector(".icon").textContent = isMuted ? "🔇" : "🔊";
+    muteLabel.textContent = isMuted ? "Unmute sound" : "Mute sound";
+  });
+
+  window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener(
+    "change",
+    function (e) { reducedMotion = e.matches; }
+  );
+
+  /* ---------------------------------------------------------------------
+   * Resize handling
+   * ------------------------------------------------------------------- */
+  function resize() {
+    var w = gameArea.clientWidth;
+    var h = gameArea.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  /* ---------------------------------------------------------------------
+   * Main loop
+   * ------------------------------------------------------------------- */
+  var clock = new THREE.Clock();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    var delta = Math.min(clock.getDelta(), 0.05);
+    var elapsed = clock.elapsedTime;
+
+    if (!isPaused) {
+      /* Target moves left/right using a sine wave */
+      targetGroup.position.x = Math.sin(elapsed * targetSpeed) * targetHalfWidth;
+
+      /* Update balls */
+      for (var i = balls.length - 1; i >= 0; i--) {
+        var b = balls[i];
+        if (b.resolved) continue;
+        b.mesh.position.addScaledVector(b.velocity, delta);
+
+        var dx = b.mesh.position.x - targetGroup.position.x;
+        var dy = b.mesh.position.y - targetGroup.position.y;
+        var dz = b.mesh.position.z - targetGroup.position.z;
+
+        if (b.mesh.position.z <= targetGroup.position.z + 0.5) {
+          var radial = Math.sqrt(dx * dx + dy * dy);
+          if (radial <= hitRadius && Math.abs(dz) <= 1.5) {
+            b.resolved = true;
+            registerHit();
+            spawnExplosion(b.mesh.position);
+            scene.remove(b.mesh);
+            balls.splice(i, 1);
+            continue;
+          }
+          if (b.mesh.position.z < targetGroup.position.z - 1.5) {
+            b.resolved = true;
+            registerMiss();
+            scene.remove(b.mesh);
+            balls.splice(i, 1);
+            continue;
+          }
+        }
+
+        if (b.mesh.position.z < -40) {
+          scene.remove(b.mesh);
+          balls.splice(i, 1);
+        }
+      }
+
+      /* Update explosion particles */
+      for (var j = particles.length - 1; j >= 0; j--) {
+        var p = particles[j];
+        p.age += delta;
+        if (p.age >= p.life) {
+          scene.remove(p.mesh);
+          particles.splice(j, 1);
+          continue;
+        }
+        p.velocity.y -= gravity * delta;
+        p.mesh.position.addScaledVector(p.velocity, delta);
+        if (!reducedMotion) {
+          p.mesh.rotation.x += p.spin.x * delta;
+          p.mesh.rotation.y += p.spin.y * delta;
+          p.mesh.rotation.z += p.spin.z * delta;
+        }
+        if (p.mesh.position.y < -1.5) {
+          p.mesh.position.y = -1.5;
+          p.velocity.y *= -0.3;
+          p.velocity.x *= 0.6;
+          p.velocity.z *= 0.6;
+        }
+      }
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>

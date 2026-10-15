@@ -1,0 +1,15 @@
+{
+  "previewBase": "http://localhost:8080",
+  "webRoot": ".",
+  "keyPages": ["UoS_AI_Prompt_Library_130.html", "UoS_AI_Tool_Evaluation_Framework.html"],
+  "pins": {
+    "accessibilityChecker": "accessibility-checker@3.1.78",
+    "pa11y": "pa11y@9.0.0"
+  },
+  "pa11yViewport": { "width": 1280, "height": 2000 },
+  "ignoreSelectors": ["__bs_notify__"],
+  "hookExcludePrefixes": [".claude/", "a11y-fixtures/"],
+  "liveRegionExcludePrefixes": [".claude/", "a11y-fixtures/", "node_modules/"],
+  "ibmBrowserPath": "",
+  "bigDocThresholdBytes": 100000
+}

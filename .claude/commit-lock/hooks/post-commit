@@ -1,0 +1,16 @@
+#!/bin/sh
+# commit-lock POST-COMMIT hook - release the same-machine commit lock.
+#
+# Installed into .git/hooks/ by:  node .claude/commit-lock/install.mjs
+# Source of truth lives at:        .claude/commit-lock/hooks/post-commit
+#
+# git runs this from the repo root AFTER the commit is made. The commit has
+# already happened, so this hook ALWAYS exits 0 - a release problem must never
+# look like a commit failure. If a release is somehow missed, the pre-commit
+# stale-break reclaims the lock after STALE_TIMEOUT.
+if ! command -v node >/dev/null 2>&1; then
+  exit 0
+fi
+
+node ".claude/commit-lock/commit-lock.mjs" release
+exit 0

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fixture — SC 2.5.3 Label in Name</title>
+    <!--
+      PROOF FIXTURE for .claude/a11y/sr/label-in-name-audit.mjs.
+
+      Every control below DECLARES its own expected verdict in
+      data-lin-expect, so label-in-name-prove.mjs is generic: it scans the page
+      and asserts the verdicts match, with no expectations hard-coded in the
+      runner. A control expected to be SKIP must produce no row at all (2.5.3
+      does not apply to it).
+
+      This fixture must contain BOTH failures and correct controls. A run that
+      finds nothing here is a broken runner, not a clean page — that is the
+      whole point of the canary rows.
+
+      Not part of the static-engine scoreboard in engine-baseline.md: the two
+      pinned engines do not check SC 2.5.3 at all, which is why this layer
+      exists. Excluded from the PostToolUse hook along with all of
+      a11y-fixtures/.
+    -->
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 48rem; }
+      .fmt { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+      .fmt-title { font-weight: 600; }
+      .fmt-desc { color: #444; font-size: 0.9rem; }
+      .visually-hidden {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      }
+      .offstage { display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Fixture — SC 2.5.3 Label in Name</h1>
+
+    <h2>Seeded failures</h2>
+
+    <!-- A common real-world defect: an aria-label
+         that replaces the visible title with different words. -->
+    <label class="fmt">
+      <input
+        type="checkbox"
+        id="lin-fail-pdf"
+        aria-label="PDF format"
+        data-lin-expect="FAIL"
+      />
+      <span>
+        <span class="fmt-title">PDF (HTML Rendering)</span>
+        <span class="fmt-desc">Portable document with rendered mathematics</span>
+      </span>
+    </label>
+
+    <!-- Self-labelling element: the visible content and the name disagree. -->
+    <button id="lin-fail-search" aria-label="Search" data-lin-expect="FAIL">
+      Find records
+    </button>
+
+    <!-- THE KEY ROW. Inside display:none, so it is invisible to the two static
+         engines and to the virtual reader, both of which read the rendered
+         accessibility tree. This layer reaches it because querySelectorAll
+         does not care about visibility — the gap that let 32 real failures
+         through. Its name here is necessarily DOM-derived, not the browser's. -->
+    <div class="offstage">
+      <label class="fmt">
+        <input
+          type="checkbox"
+          id="lin-fail-hidden-htmlzip"
+          aria-label="HTML ZIP format"
+          data-lin-expect="FAIL"
+        />
+        <span>
+          <span class="fmt-title">HTML Archive (ZIP)</span>
+          <span class="fmt-desc">Less accessible than HTML. Includes images and CSS.</span>
+        </span>
+      </label>
+    </div>
+
+    <!-- Emoji prefix, genuine mismatch. The visible words "Download HTML" are
+         not contained in "Download formatted response as HTML", so this stays a
+         FAIL after the symbol-stripping fix below. A real-world instance.
+         It is the canary proving that fix narrowed the rule rather than
+         disabling it. -->
+    <button
+      id="lin-fail-emoji-mismatch"
+      aria-label="Download formatted response as HTML"
+      data-lin-expect="FAIL"
+    >
+      ⬇️ Download HTML
+    </button>
+
+    <h2>Correct controls — the canaries. These must NOT be reported as FAIL.</h2>
+
+    <!-- Emoji used as an ICON, ahead of real label text. WCAG does not treat a
+         symbol as text, so the visible label here is "Download", which IS
+         contained in the name — this must PASS.
+
+         Before normalise() stripped \p{S} and \p{M}, "⬇️ Download" reduced to
+         "⬇️ download" (the U+FE0F presentation selector is a combining mark and
+         survived a \p{S}-only strip), no name could contain it, and the checker
+         manufactured a failure out of its own normalisation. Named from
+         aria-labelledby rather than aria-label so the expected verdict is PASS
+         and not the name-override REVIEW. -->
+    <p>
+      <button
+        id="lin-pass-emoji-prefix"
+        aria-labelledby="lin-pass-emoji-prefix-name"
+        data-lin-expect="PASS"
+      >
+        ⬇️ Download
+      </button>
+      <span class="visually-hidden" id="lin-pass-emoji-prefix-name">
+        Download the report as CSV
+      </span>
+    </p>
+
+    <!-- The correct shape to move TO: aria-labelledby names the control
+         from its own visible title, aria-describedby carries the description.
+         The whole label's text is longer than the name, which is exactly the
+         case that a naive whole-label comparison would fail. -->
+    <label class="fmt">
+      <input
+        type="checkbox"
+        id="lin-pass-labelledby"
+        aria-labelledby="lin-pass-labelledby-title"
+        aria-describedby="lin-pass-labelledby-desc"
+        data-lin-expect="PASS"
+      />
+      <span>
+        <span class="fmt-title" id="lin-pass-labelledby-title">PDF (LaTeX Rendering)</span>
+        <span class="fmt-desc" id="lin-pass-labelledby-desc">
+          PDF with selectable LaTeX equations
+        </span>
+      </span>
+    </label>
+
+    <!-- Plain, correct explicit association. No ARIA at all. -->
+    <p>
+      <label for="lin-pass-postcode">Postcode</label>
+      <input type="text" id="lin-pass-postcode" data-lin-expect="PASS" />
+    </p>
+
+    <!-- A visually-hidden <label> is a legitimate name source, and its text is
+         NOT a visible label — so there is nothing for 2.5.3 to compare and no
+         row should be produced. -->
+    <p>
+      <label class="visually-hidden" for="lin-skip-tokens">Maximum response length in tokens</label>
+      <input type="number" id="lin-skip-tokens" min="1" max="99" data-lin-expect="SKIP" />
+    </p>
+
+    <h2>Review — passes containment, still worth a human look</h2>
+
+    <!-- "Save" IS contained in "Save file", so this is not a 2.5.3 failure. But
+         the aria-label suppresses the rest of the visible content, which is the
+         half of the same defect, which can hide an accessibility warning from
+         screen-reader users. -->
+    <label class="fmt">
+      <input
+        type="checkbox"
+        id="lin-review-save"
+        aria-label="Save file"
+        data-lin-expect="REVIEW"
+      />
+      <span>
+        <span class="fmt-title">Save</span>
+        <span class="fmt-desc">Writes the document to disk</span>
+      </span>
+    </label>
+
+    <h2>Ambiguous names — same name, different actions</h2>
+
+    <!--
+      Both PASS SC 2.5.3: each name is exactly its visible text. The defect is a
+      different one, which 2.5.3 cannot see — out of context neither a screen
+      reader nor voice input can tell these apart. Real-world instance: ten
+      buttons named just "Download", one per model.
+
+      Both are rendered, so the ambiguous-name group must report renderedCount 2.
+      That is the signal that separates a live ambiguity from harmless copies of
+      one UI sitting in mutually-exclusive panels.
+    -->
+    <p>
+      <button id="lin-dup-load-a" data-lin-expect="PASS">Load</button>
+      <button id="lin-dup-load-b" data-lin-expect="PASS">Load</button>
+    </p>
+
+    <h2>Out of scope — must produce no row at all</h2>
+
+    <!-- Icon-only: no visible text, so nothing to compare. -->
+    <button id="lin-skip-icononly" aria-label="Refresh the list" data-lin-expect="SKIP">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
+        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" />
+      </svg>
+    </button>
+
+    <!-- Symbolic label. WCAG does not treat a symbol as a text label, so
+         aria-label="Close" over a "×" is correct authoring, not a failure.
+         Treating it as one would bury the real findings in noise. -->
+    <button id="lin-skip-symbol" aria-label="Close" data-lin-expect="SKIP">×</button>
+  </body>
+</html>

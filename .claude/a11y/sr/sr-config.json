@@ -1,0 +1,22 @@
+{
+  "previewBase": "http://localhost:8080",
+  "webRoot": ".",
+  "installDirEnv": "A11Y_SR_HOME",
+  "installDirName": "claude-a11y-sr",
+  "chromiumRevision": "1223",
+  "viewport": { "width": 1280, "height": 720 },
+  "viewports": [
+    { "width": 1280, "height": 720 },
+    { "width": 1440, "height": 900 }
+  ],
+  "pins": {
+    "playwright": "1.60.0",
+    "virtualScreenReader": "0.32.1"
+  },
+  "fixtures": {
+    "clean": "a11y-fixtures/fixture-clean.html",
+    "broken": "a11y-fixtures/fixture-broken.html",
+    "labelInName": "a11y-fixtures/fixture-label-in-name.html",
+    "formDemo": "a11y-fixtures/form-demo/after.html"
+  }
+}

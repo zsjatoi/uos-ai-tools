@@ -1,0 +1,8 @@
+IO - speech.speech.speak (20:25:01.266) - MainThread (27836):
+Speaking [LangChangeCommand ('en_US'), 'nvda cancellation spike', 'document', CancellableSpeech (still valid)]
+IO - speech.speech.speak (20:25:01.268) - MainThread (27836):
+Speaking [LangChangeCommand ('en_US'), 'heading', 'level 1', 'Cancellation spike']
+IO - speech.speech.speak (20:25:42.057) - MainThread (27836):
+Speaking [LangChangeCommand ('en_US'), 'sierra6690 one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty ']
+IO - speech.speech.speak (20:25:47.759) - MainThread (27836):
+Speaking [LangChangeCommand ('en_US'), 'tango5028 bravo button with a deliberately long accessible name alpha bravo charlie delta echo foxtrot golf hotel india juliet', 'button']

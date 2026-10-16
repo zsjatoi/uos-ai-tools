@@ -1,0 +1,32 @@
+# IBM Equal Access checker configuration (the primary engine).
+# The "achecker" CLI loads this file from its WORKING DIRECTORY. audit.mjs runs it
+# from webRoot (a11y.config.json). If webRoot is not ".", copy this file there,
+# or the checker silently ignores it and uses built-in defaults.
+
+# Pinned to a dated rule deployment so every machine evaluates against the same
+# rules. "versioned" would drift to the latest archive at run time. Use the SHORT
+# id shown by `npx accessibility-checker archives`, not the dotted date.
+ruleArchive: "19May2026"
+
+# The WCAG 2.2 (A and AA) policy. This is the only automated engine in the kit
+# that covers target size (SC 2.5.8).
+policies:
+  - WCAG_2_2
+
+# A run "fails" (non-zero exit) on confirmed or potential violations.
+failLevels:
+  - violation
+  - potentialviolation
+
+# Which result levels appear in the report files.
+reportLevels:
+  - violation
+  - potentialviolation
+
+# Reports land here (relative to the working directory). Git-ignore this folder.
+outputFolder: .claude/a11y/reports/achecker
+
+# Emit machine-readable JSON and a human-readable HTML report.
+outputFormat:
+  - json
+  - html

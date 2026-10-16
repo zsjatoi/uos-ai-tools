@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NVDA speech-capture fleet probe</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        max-width: 40rem;
+        color: #14202b;
+        background: #fff;
+      }
+      code {
+        background: #eef2f5;
+        padding: 0.1em 0.3em;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #e1e8ec;
+          background: #00131d;
+        }
+        code {
+          background: #123;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NVDA speech-capture fleet probe</h1>
+
+    <p>
+      This page exists for <code>nvda-fleet-survey.mjs</code>. The survey writes a
+      machine-stamped string into the live region below, then reads NVDA's own log back
+      and checks the parser recovered it — proving the speech-capture layer works on
+      <em>this</em> machine's NVDA rather than inferring it from a version number.
+    </p>
+
+    <!--
+      DOCUMENT-ATTACHMENT ANCHOR.
+
+      Its accessible name appears NOWHERE ELSE — not in the <title>, not in the
+      <h1> — and that is the whole point. Measured 10 August 2026: NVDA
+      announces the WINDOW (whose title matches the h1) when it starts over an
+      already-foreground browser, but that is not the same as the reader being
+      inside the document, and a live region only announces for a document the
+      reader is tracking. A marker drawn from the title cannot tell those two
+      states apart, so it reported "attached" for a run that then heard nothing.
+
+      Focusing this button — programmatically, or by the person pressing Tab —
+      makes NVDA speak this string, which IS evidence of document attachment.
+    -->
+    <button id="probe-anchor" type="button">Probe anchor ready</button>
+
+    <!--
+      The region is LONG-LIVED: it exists at page load and is never rebuilt.
+      A live region created milliseconds before its content has been measured
+      SILENT on NVDA in earlier measurements, so a
+      probe that manufactured its own region could report a false negative and
+      would be testing the wrong thing.
+    -->
+    <div id="fleet-probe-region" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <h2>What a red result means</h2>
+    <p>
+      A failed probe means the parser did not recover the string from this machine's NVDA
+      log — most likely a different log format on an older build. That is a
+      <strong>successful survey</strong>: it is the exact failure the layer exists to
+      catch, and a parser that silently returns nothing is indistinguishable from a page
+      that said nothing.
+    </p>
+  </body>
+</html>

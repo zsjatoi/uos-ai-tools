@@ -1,0 +1,17 @@
+#!/bin/sh
+# commit-lock PRE-COMMIT hook - acquire the same-machine commit lock.
+#
+# Installed into .git/hooks/ by:  node .claude/commit-lock/install.mjs
+# Source of truth lives at:        .claude/commit-lock/hooks/pre-commit
+# See .claude/commit-lock/commit-lock.mjs and the README section 'Safety'.
+#
+# git runs this from the repo root before making a commit. If "acquire" exits
+# non-zero, git aborts the commit - that is how a commit is made to wait/refuse.
+#
+# Fail-open if node is missing: a broken toolchain must never block all commits.
+if ! command -v node >/dev/null 2>&1; then
+  echo "[commit-lock] node not found on PATH - commit NOT serialised (guard skipped)" >&2
+  exit 0
+fi
+
+exec node ".claude/commit-lock/commit-lock.mjs" acquire

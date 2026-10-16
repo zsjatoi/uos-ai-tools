@@ -1,0 +1,85 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node .claude/a11y/audit.mjs:*)",
+      "Bash(node .claude/a11y/live-region-inventory.mjs:*)",
+      "Bash(node .claude/a11y/prove-live-region-inventory.mjs)",
+      "Bash(node .claude/a11y/sr/sr-audit.mjs:*)",
+      "Bash(node .claude/a11y/sr/sr-prove.mjs)",
+      "Bash(node .claude/a11y/sr/label-in-name-audit.mjs:*)",
+      "Bash(node .claude/a11y/sr/label-in-name-prove.mjs)",
+      "Bash(node .claude/a11y/sr/nvda-speech-prove.mjs:*)",
+      "Bash(node .claude/digest/outline.mjs:*)"
+    ],
+    "deny": [
+      "Edit(**/UoS_AI_Prompt_Library_130.html)",
+      "Edit(**/UoS_AI_Tool_Evaluation_Framework.html)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/guards/no-recursive-walk.mjs\"",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/guards/big-doc-read.mjs\"",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/guards/no-heredoc.mjs\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/a11y/hook-check.mjs\"",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/harness-proof-prompt.mjs\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/settings-parse-check.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
